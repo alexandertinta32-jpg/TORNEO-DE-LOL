@@ -3823,7 +3823,7 @@ select, .profile-edit-form input, .profile-edit-form textarea { width: 100%; min
 .hell-flow-node .flow-banner strong { font-size: 13px; }
 .hell-flow-node .flow-banner small { color: #ffb5b0; }
 .hell-flow-final { grid-column: 3; }
-.hell-final-players { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: center; }
+.hell-final-players { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: center; max-width: 280px; margin: 0 auto; }
 .hell-flow-hint { margin: 8px 4px 0; color: #ffb0a7; font-size: 10px; line-height: 1.5; text-align: center; }
 @media (max-width: 700px) {
     .hell-composition { padding: 22px 12px 20px; }
