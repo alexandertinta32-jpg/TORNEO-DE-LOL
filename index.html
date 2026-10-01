@@ -15,7 +15,7 @@
 
     <link
         rel="stylesheet"
-        href="css/style.css?v=26"
+        href="css/style.css?v=27"
     >
 
 </head>
@@ -522,7 +522,10 @@
                     <div class="randomizer-engine">
                         <div id="randomizerResults" class="randomizer-results"></div>
                         <p id="randomizerStatus" class="panel-note" role="status">Pulsa RANDOMIZAR para elegir un campeón.</p>
-                        <button id="randomizeButton" class="primary-button" type="button">RANDOMIZAR</button>
+                        <div class="randomizer-actions">
+                            <button id="randomizeButton" class="primary-button" type="button">RANDOMIZAR</button>
+                            <button id="resetRandomizerButton" class="secondary-button" type="button">REINICIAR RANDOMIZER</button>
+                        </div>
                         <p class="panel-note">En 1VS1, ambos campeones salen de la misma categoría para mantener un duelo más parejo: luchador, mago, asesino, tirador, soporte o tanque.</p>
                     </div>
                 </div>
@@ -893,7 +896,7 @@
 
     <script src="js/roulette.js?v=22"></script>
 
-    <script src="js/randomizer.js?v=22"></script>
+    <script src="js/randomizer.js?v=23"></script>
 
     <script src="js/standings.js?v=21"></script>
 

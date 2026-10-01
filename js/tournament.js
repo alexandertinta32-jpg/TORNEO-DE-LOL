@@ -61,7 +61,7 @@ function createTournamentState() {
         currentModule: TOURNAMENT_MODULES[0].id,
         modules: Object.fromEntries(TOURNAMENT_MODULES.map(module => [module.id, { matches: [], loserMatches: [], created: false }])),
         roulette: { selectedIds: [], lastId: null, rotation: 0 },
-        randomizer: { mode: "single", playerIds: [null, null], activePlayerId: null, champions: [], championsByPlayer: {} }
+        randomizer: { mode: "single", playerIds: [null, null], activePlayerId: null, champions: [], championsByPlayer: {}, slotRoles: [null, null, null] }
     };
 }
 
@@ -136,6 +136,14 @@ function normalizeTournamentState(saved) {
         [...new Set(Array.isArray(savedChampionLists[id])
             ? savedChampionLists[id].filter(name => typeof name === "string" && LOL_CHAMPIONS.includes(name)) : [])].slice(0, 3)
     ]));
+    const validRoles = new Set(Object.keys(CHAMPION_ROLE_POOLS));
+    next.randomizer.slotRoles = [0, 1, 2].map(slot => {
+        const savedRole = saved.randomizer?.slotRoles?.[slot];
+        if (validRoles.has(savedRole)) return savedRole;
+        const playerWithPick = next.participantIds.find(id => next.randomizer.championsByPlayer[id]?.[slot]);
+        const inferred = playerWithPick ? getChampionRole(next.randomizer.championsByPlayer[playerWithPick][slot]) : null;
+        return validRoles.has(inferred) ? inferred : null;
+    });
     return next;
 }
 

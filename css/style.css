@@ -3920,6 +3920,15 @@ body[class*="bracket-theme-"] button:focus-visible { outline-color: var(--bracke
 .randomizer-player-switcher button:hover, .randomizer-player-switcher button.is-active { border-color: #64b8f7; background: #123b60; color: #fff; }
 .randomizer-engine { min-width: 0; }
 .randomizer-engine #randomizerResults { min-height: 300px; }
+.randomizer-actions { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.randomizer-actions #randomizeButton { margin: 0; }
+.randomizer-actions #resetRandomizerButton { margin: 0; padding: 11px 14px; font-size: 10px; }
+.randomizer-slot-rules { margin-top: 16px; }
+.randomizer-slot-rules > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; margin-top: 7px; }
+.randomizer-slot-rule { display: grid; gap: 3px; padding: 7px 5px; border: 1px solid #315979; border-radius: 4px; color: #819bb5; text-align: center; font-size: 7px; font-weight: 800; letter-spacing: .5px; }
+.randomizer-slot-rule b { color: #6b8eae; font-size: 9px; }
+.randomizer-slot-rule.is-set { border-color: #4d92c6; background: #0d3150; color: #c8e9ff; }
+.randomizer-slot-rule.is-set b { color: #76c5f7; }
 .random-champion-card-single { min-height: 300px; display: grid; align-content: center; justify-items: center; }
 .randomizer-duel-summary { display: grid; gap: 9px; margin-top: 22px; }
 .randomizer-duel-summary div { padding: 10px; border: 1px solid #315979; border-radius: 5px; background: #081a30; }
@@ -3931,3 +3940,19 @@ body[class*="bracket-theme-"] button:focus-visible { outline-color: var(--bracke
     .randomizer-player-panel { order: 1; }
     .randomizer-engine { order: 2; }
 }
+
+body[class*="bracket-theme-"] .randomizer-player-panel,
+body[class*="bracket-theme-"] .randomizer-duel-summary div,
+body[class*="bracket-theme-"] .randomizer-player-details,
+body[class*="bracket-theme-"] .randomizer-picked-card,
+body[class*="bracket-theme-"] .randomizer-player-switcher button,
+body[class*="bracket-theme-"] .randomizer-slot-rule { border-color: color-mix(in srgb, var(--bracket-theme-primary) 62%, #315979 38%); }
+body[class*="bracket-theme-"] .randomizer-player-panel { background: radial-gradient(circle at 50% 0, color-mix(in srgb, var(--bracket-theme-primary) 38%, transparent), color-mix(in srgb, var(--bracket-theme-primary) 13%, #07172b 87%) 68%); box-shadow: inset 0 0 35px color-mix(in srgb, var(--bracket-theme-primary) 18%, transparent), 0 12px 30px #0004; }
+body[class*="bracket-theme-"] .randomizer-player-panel select,
+body[class*="bracket-theme-"] .randomizer-player-switcher button { background: color-mix(in srgb, var(--bracket-theme-primary) 16%, #081a30 84%); }
+body[class*="bracket-theme-"] .randomizer-player-switcher button:hover,
+body[class*="bracket-theme-"] .randomizer-player-switcher button.is-active,
+body[class*="bracket-theme-"] .randomizer-slot-rule.is-set { border-color: var(--bracket-theme-accent); background: color-mix(in srgb, var(--bracket-theme-primary) 34%, #123b60 66%); }
+body[class*="bracket-theme-"] .randomizer-picked-card { background: linear-gradient(120deg, color-mix(in srgb, var(--bracket-theme-primary) 28%, #0c2945 72%), #07182d); }
+body[class*="bracket-theme-"] .randomizer-engine .random-champion-card { border-color: color-mix(in srgb, var(--bracket-theme-primary) 62%, #3f6c94 38%); background: radial-gradient(ellipse at 50% 30%, color-mix(in srgb, var(--bracket-theme-primary) 30%, #19416a 70%), #081525 70%); }
+body[class*="bracket-theme-"] .randomizer-engine .champion-media > span { border-color: var(--bracket-theme-primary); color: var(--bracket-theme-accent); box-shadow: 0 0 40px color-mix(in srgb, var(--bracket-theme-primary) 30%, transparent); }

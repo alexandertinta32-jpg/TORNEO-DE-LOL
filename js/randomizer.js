@@ -8,6 +8,7 @@ let randomizerRunning = false;
 const randomizerResults = document.getElementById("randomizerResults");
 const randomizerPlayerPanel = document.getElementById("randomizerPlayerPanel");
 const randomizeButton = document.getElementById("randomizeButton");
+const resetRandomizerButton = document.getElementById("resetRandomizerButton");
 
 function drawChampions(count, pool = LOL_CHAMPIONS) {
     const available = [...new Set(pool)];
@@ -36,6 +37,50 @@ function playerChampionList(state, playerId) {
     return Array.isArray(state.championsByPlayer?.[playerId]) ? state.championsByPlayer[playerId] : [];
 }
 
+function randomizerSlotRole(state, slot) {
+    return state.slotRoles?.[slot] || null;
+}
+
+function chooseSlotRole(state, slot) {
+    const current = randomizerSlotRole(state, slot);
+    if (current) return current;
+    const roles = Object.keys(CHAMPION_ROLE_POOLS);
+    return roles[randomIndex(roles.length)];
+}
+
+function drawForPlayer(state, playerId) {
+    const picks = playerChampionList(state, playerId);
+    const slot = picks.length;
+    const role = chooseSlotRole(state, slot);
+    const rolePool = CHAMPION_ROLE_POOLS[role] || LOL_CHAMPIONS;
+    const available = rolePool.filter(name => !picks.includes(name));
+    const pool = available.length ? available : LOL_CHAMPIONS.filter(name => !picks.includes(name));
+    return { champion: drawChampions(1, pool)[0], role, slot };
+}
+
+function setActiveRandomizerPlayer(playerId) {
+    if (randomizerRunning || !getPlayers().some(player => player.id === playerId)) return;
+    const next = getTournamentState();
+    next.randomizer.activePlayerId = playerId;
+    next.randomizer.champions = [];
+    saveTournamentState(next, "randomizer");
+    renderRandomizer();
+}
+
+function resetRandomizer() {
+    if (randomizerRunning) return;
+    if (!confirm("¿Reiniciar el randomizer? Se borrarán los campeones guardados de todos los jugadores y las categorías por posición.")) return;
+    const next = getTournamentState();
+    next.randomizer.mode = "single";
+    next.randomizer.playerIds = [null, null];
+    next.randomizer.activePlayerId = getPlayers()[0]?.id || null;
+    next.randomizer.champions = [];
+    next.randomizer.championsByPlayer = Object.fromEntries(getPlayers().map(player => [player.id, []]));
+    next.randomizer.slotRoles = [null, null, null];
+    saveTournamentState(next, "randomizer-reset");
+    renderRandomizer();
+}
+
 function renderPlayerPanel(state) {
     if (!randomizerPlayerPanel) return;
     const players = getPlayers();
@@ -45,15 +90,18 @@ function renderPlayerPanel(state) {
     }
     const player = activeRandomizerPlayer(state) || players[0];
     const picks = playerChampionList(state, player.id);
+    const slotRules = [0, 1, 2].map(slot => randomizerSlotRole(state, slot));
+    const slotRulesMarkup = slotRules.map((role, slot) => `<span class="randomizer-slot-rule ${role ? "is-set" : ""}"><b>${slot + 1}ª</b>${role ? escapeHTML(role.toUpperCase()) : "PENDIENTE"}</span>`).join("");
     randomizerPlayerPanel.innerHTML = `<div class="randomizer-player-panel-head"><span class="eyebrow">APARTADO DEL JUGADOR</span>
-            <h3>${escapeHTML(player.name)}</h3><p>Cada jugador puede guardar hasta ${RANDOMIZER_PLAYER_LIMIT} campeones.</p></div>
+            <h3>${escapeHTML(player.name)}</h3><p>Cada jugador puede guardar hasta ${RANDOMIZER_PLAYER_LIMIT} campeones. La categoría se comparte por posición.</p></div>
         <label class="randomizer-player-label" for="randomizerPlayerSelect">ELEGIR PARTICIPANTE</label>
         <select id="randomizerPlayerSelect" data-randomizer-active-player ${randomizerRunning ? "disabled" : ""}>
             ${players.map(option => `<option value="${escapeHTML(option.id)}" ${option.id === player.id ? "selected" : ""}>${escapeHTML(option.name)}</option>`).join("")}
         </select>
         <details class="randomizer-player-details" open><summary><span><strong>${escapeHTML(player.name)}</strong><small>${picks.length}/${RANDOMIZER_PLAYER_LIMIT} CAMPEONES</small></span><b>⌄</b></summary>
-            <div class="randomizer-picked-list">${picks.length ? picks.map((name, index) => `<article class="randomizer-picked-card"><span>${String(index + 1).padStart(2, "0")}</span><div><strong>${escapeHTML(name)}</strong><small>${escapeHTML(getChampionRole(name).toUpperCase())}</small></div></article>`).join("") : '<p class="randomizer-picked-empty">Pulsa RANDOMIZAR para agregar el primer campeón.</p>'}</div>
+            <div class="randomizer-picked-list">${picks.length ? picks.map((name, index) => `<article class="randomizer-picked-card"><span>${String(index + 1).padStart(2, "0")}</span><div><strong>${escapeHTML(name)}</strong><small>${escapeHTML((slotRules[index] || getChampionRole(name)).toUpperCase())} · OPCIÓN ${index + 1}</small></div></article>`).join("") : '<p class="randomizer-picked-empty">Pulsa RANDOMIZAR para agregar el primer campeón.</p>'}</div>
         </details>
+        <div class="randomizer-slot-rules"><span class="eyebrow">CATEGORÍA POR POSICIÓN</span><div>${slotRulesMarkup}</div></div>
         <div class="randomizer-player-switcher"><span class="eyebrow">CAMBIAR RÁPIDO</span><div>${players.map(option => `<button type="button" data-randomizer-player="${escapeHTML(option.id)}" class="${option.id === player.id ? "is-active" : ""}" ${randomizerRunning ? "disabled" : ""}>${escapeHTML(option.name)}</button>`).join("")}</div></div>`;
 }
 
@@ -88,10 +136,11 @@ function renderRandomizer() {
         randomizerResults.innerHTML = singleResultMarkup(state, player);
         const limit = picks.length >= RANDOMIZER_PLAYER_LIMIT;
         randomizeButton.disabled = randomizerRunning || limit || !player;
+        resetRandomizerButton.disabled = randomizerRunning;
         randomizeButton.textContent = randomizerRunning ? "SORTEANDO…" : limit ? "LÍMITE ALCANZADO" : "RANDOMIZAR";
         document.getElementById("randomizerStatus").textContent = !player ? "Agrega participantes para comenzar." : limit
             ? `${player.name} ya tiene sus ${RANDOMIZER_PLAYER_LIMIT} campeones guardados.`
-            : picks.length ? `${player.name}: ${picks.length}/${RANDOMIZER_PLAYER_LIMIT}. Cada giro agrega un campeón nuevo.` : `El próximo giro se guardará en el apartado de ${player.name}.`;
+            : picks.length ? `${player.name}: ${picks.length}/${RANDOMIZER_PLAYER_LIMIT}. La opción ${picks.length + 1} será ${randomizerSlotRole(state, picks.length) ? randomizerSlotRole(state, picks.length).toUpperCase() : "equilibrada para todos"}.` : `El próximo giro se guardará en el apartado de ${player.name}.`;
         return;
     }
     renderDuelPanel(state);
@@ -105,6 +154,7 @@ function renderRandomizer() {
             <strong class="champion-result">${escapeHTML(state.champions[index] || "POR REVELAR")}</strong><span class="champion-role">${state.champions[index] ? escapeHTML(getChampionRole(state.champions[index]).toUpperCase()) : "ROL EMPAREJADO"}</span></article>`;
     }).join("");
     randomizeButton.disabled = randomizerRunning;
+    resetRandomizerButton.disabled = randomizerRunning;
     randomizeButton.textContent = randomizerRunning ? "SORTEANDO…" : "RANDOMIZAR";
     document.getElementById("randomizerStatus").textContent = state.champions.length
         ? state.champions.map((name, index) => `${getPlayerById(state.playerIds[index])?.name || `Jugador ${index + 1}`}: ${name}`).join(" · ") : "Dos campeones diferentes para tu próximo 1VS1.";
@@ -116,12 +166,14 @@ function runRandomizer() {
     const count = RANDOMIZER_MODES[state.randomizer.mode].count;
     let result;
     let activeId = null;
+    let singleDraw = null;
     if (state.randomizer.mode === "single") {
         const player = activeRandomizerPlayer(state);
         activeId = player?.id || null;
         const picks = activeId ? playerChampionList(state.randomizer, activeId) : [];
         if (!activeId || picks.length >= RANDOMIZER_PLAYER_LIMIT) return;
-        result = drawChampions(1, LOL_CHAMPIONS.filter(name => !picks.includes(name)));
+        singleDraw = drawForPlayer(state.randomizer, activeId);
+        result = [singleDraw.champion];
     } else result = drawBalancedDuel();
     randomizerRunning = true;
     renderRandomizer();
@@ -138,6 +190,7 @@ function runRandomizer() {
             if (next.randomizer.mode === "single") {
                 const current = playerChampionList(next.randomizer, activeId);
                 next.randomizer.activePlayerId = activeId;
+                next.randomizer.slotRoles[singleDraw.slot] = singleDraw.role;
                 next.randomizer.championsByPlayer[activeId] = [...current, result[0]].slice(0, RANDOMIZER_PLAYER_LIMIT);
                 next.randomizer.champions = [result[0]];
             } else next.randomizer.champions = result;
@@ -145,7 +198,7 @@ function runRandomizer() {
             renderRandomizer();
             return;
         }
-        const temporary = count === 2 ? drawBalancedDuel() : drawChampions(1);
+        const temporary = count === 2 ? drawBalancedDuel() : drawChampions(1, CHAMPION_ROLE_POOLS[singleDraw?.role] || LOL_CHAMPIONS);
         randomizerResults.querySelectorAll(".champion-result").forEach((element, index) => { element.textContent = temporary[index]; });
         randomizerTimer = setTimeout(tick, 85);
     }
@@ -174,26 +227,19 @@ randomizerResults.addEventListener("change", event => {
 });
 randomizerPlayerPanel?.addEventListener("change", event => {
     const select = event.target.closest("[data-randomizer-active-player]");
-    if (!select || randomizerRunning) return;
-    const next = getTournamentState();
-    next.randomizer.activePlayerId = select.value;
-    next.randomizer.champions = [];
-    saveTournamentState(next, "randomizer");
-    renderRandomizer();
+    if (!select) return;
+    setActiveRandomizerPlayer(select.value);
 });
 randomizerPlayerPanel?.addEventListener("click", event => {
     const button = event.target.closest("[data-randomizer-player]");
-    if (!button || randomizerRunning) return;
-    const next = getTournamentState();
-    next.randomizer.activePlayerId = button.dataset.randomizerPlayer;
-    next.randomizer.champions = [];
-    saveTournamentState(next, "randomizer");
-    renderRandomizer();
+    if (!button) return;
+    setActiveRandomizerPlayer(button.dataset.randomizerPlayer);
 });
 randomizeButton.addEventListener("click", runRandomizer);
+resetRandomizerButton.addEventListener("click", resetRandomizer);
 document.addEventListener("DOMContentLoaded", renderRandomizer);
 document.addEventListener("tournament:changed", event => {
-    if (["players", "reset"].includes(event.detail.reason)) {
+    if (["players", "reset", "randomizer-reset"].includes(event.detail.reason)) {
         cancelRandomizer();
         randomizerResults.classList.remove("is-rolling");
         renderRandomizer();

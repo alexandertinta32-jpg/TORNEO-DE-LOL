@@ -17,7 +17,7 @@ Abre `index.html` con Live Server. La vista local de desarrollo usada durante es
 - `js/standings.js` deriva PJ, PG, PP y puntos de los resultados vigentes; no acumula contadores, por lo que corregir un ganador no duplica estadísticas.
 - `js/roulette.js` dibuja nombres desde los jugadores y guarda solamente el historial del sorteo. Al completar ocho selecciones muestra los ocho banners en orden, reproduce `assets/sounds/EEG.mp3` y permite cerrar la pantalla con CONTINUAR. No modifica el bracket automáticamente.
 - `data/champions.js` contiene el catálogo local de 173 campeones de Data Dragon 16.19.1 (`es_MX`), sin descargar imágenes.
-- `js/randomizer.js` admite sorteo individual por jugador y modo 1VS1. En individual, cada giro se guarda en el apartado del participante activo hasta un máximo de tres campeones, sin repetir dentro de su lista; en 1VS1 selecciona una categoría compartida (luchador, mago, asesino, tirador, soporte o tanque).
+- `js/randomizer.js` admite sorteo individual por jugador y modo 1VS1. En individual, cada giro se guarda en el apartado del participante activo hasta un máximo de tres campeones, sin repetir dentro de su lista; cada posición comparte su categoría entre todos los jugadores para equilibrar las opciones. El botón de reinicio borra listas y categorías del randomizer; en 1VS1 selecciona una categoría compartida.
 
 ## Reglas provisionales
 
