@@ -3829,3 +3829,32 @@ select, .profile-edit-form input, .profile-edit-form textarea { width: 100%; min
     .hell-composition { padding: 22px 12px 20px; }
     .hell-flow-board { min-width: 1030px; }
 }
+
+/* Selección lateral de jugadores: visible, oscura y alineada con cada banner. */
+.match-side { display: grid; grid-template-columns: minmax(0, 1fr) 116px; gap: 8px; align-items: stretch; }
+.match-side .match-player { order: 1; }
+.match-side .match-player-select { order: 2; align-self: center; margin: 0; border-color: #37658b; background: #0a1d34; color: #cfe5f8; color-scheme: dark; }
+.match-side .match-player-select:focus, .match-side .match-player-select:hover { border-color: #5fb0f5; background: #102d4b; }
+.bracket-composition .tree-player-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 104px; gap: 7px; align-items: stretch; }
+.bracket-composition .tree-player-wrap:has(.tree-player-select:disabled) { grid-template-columns: minmax(0, 1fr); }
+.bracket-composition .tree-player-select { position: static; order: 2; align-self: center; width: 100%; height: 34px; opacity: 1; padding: 5px 7px; border: 1px solid #37658b; border-radius: 4px; background: #0a1d34; color: #cfe5f8; color-scheme: dark; }
+.bracket-composition .tree-player-select:disabled { display: none; }
+.bracket-composition .tree-player-select:focus, .bracket-composition .tree-player-select:hover { border-color: #5fb0f5; background: #102d4b; }
+
+/* El campeón de la revancha tiñe la pantalla con el tema de su banner. */
+body[class*="bracket-theme-"] {
+    background-image: linear-gradient(135deg, color-mix(in srgb, var(--bracket-theme-primary) 24%, #020912 76%), color-mix(in srgb, var(--bracket-theme-accent) 8%, #01050b 92%)), url("../assets/backgrounds/torneo-bg.jpg");
+}
+body[class*="bracket-theme-"] .header { border-bottom-color: var(--bracket-theme-primary); box-shadow: 0 0 24px color-mix(in srgb, var(--bracket-theme-primary) 28%, transparent); }
+body[class*="bracket-theme-"] .logo strong, body[class*="bracket-theme-"] .section-header h2 { color: var(--bracket-theme-accent); }
+body[class*="bracket-theme-"] .tournament-panel { border-color: color-mix(in srgb, var(--bracket-theme-primary) 48%, #37526b 52%); background: linear-gradient(135deg, color-mix(in srgb, var(--bracket-theme-primary) 14%, #0d2036 86%), #05101ef2); }
+body[class*="bracket-theme-"] .module-tab.is-active { border-color: var(--bracket-theme-primary); box-shadow: inset 0 -2px var(--bracket-theme-accent); }
+body.bracket-theme-cafe { --bracket-theme-primary: #c62828; --bracket-theme-accent: #ff4b4b; }
+body.bracket-theme-raquel { --bracket-theme-primary: #8e5ac7; --bracket-theme-accent: #c99cff; }
+body.bracket-theme-nexxel { --bracket-theme-primary: #25c45a; --bracket-theme-accent: #50ff7a; }
+body.bracket-theme-chato { --bracket-theme-primary: #1687ff; --bracket-theme-accent: #4ca3ff; }
+body.bracket-theme-masa { --bracket-theme-primary: #c62828; --bracket-theme-accent: #ffd45c; }
+body.bracket-theme-myles { --bracket-theme-primary: #54dce8; --bracket-theme-accent: #8af5ff; }
+body.bracket-theme-meilin { --bracket-theme-primary: #ec6fae; --bracket-theme-accent: #ff9fca; }
+body.bracket-theme-evan { --bracket-theme-primary: #c62828; --bracket-theme-accent: #ff7777; }
+body.bracket-theme-richard { --bracket-theme-primary: #20d5df; --bracket-theme-accent: #6ff7ff; }

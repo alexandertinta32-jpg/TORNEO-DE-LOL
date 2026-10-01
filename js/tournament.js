@@ -61,7 +61,7 @@ function createTournamentState() {
         currentModule: TOURNAMENT_MODULES[0].id,
         modules: Object.fromEntries(TOURNAMENT_MODULES.map(module => [module.id, { matches: [], loserMatches: [], created: false }])),
         roulette: { selectedIds: [], lastId: null, rotation: 0 },
-        randomizer: { mode: "single", playerIds: [null, null], champions: [] }
+        randomizer: { mode: "single", playerIds: [null, null], activePlayerId: null, champions: [], championsByPlayer: {} }
     };
 }
 
@@ -126,8 +126,16 @@ function normalizeTournamentState(saved) {
     if (saved.randomizer?.mode === "duel") next.randomizer.mode = "duel";
     next.randomizer.playerIds = [0, 1].map(slot => ids.has(saved.randomizer?.playerIds?.[slot]) ? saved.randomizer.playerIds[slot] : null);
     if (next.randomizer.playerIds[0] === next.randomizer.playerIds[1]) next.randomizer.playerIds[1] = null;
+    next.randomizer.activePlayerId = ids.has(saved.randomizer?.activePlayerId)
+        ? saved.randomizer.activePlayerId : next.participantIds[0] || null;
     next.randomizer.champions = Array.isArray(saved.randomizer?.champions)
         ? saved.randomizer.champions.filter(name => typeof name === "string").slice(0, 2) : [];
+    const savedChampionLists = saved.randomizer?.championsByPlayer && typeof saved.randomizer.championsByPlayer === "object"
+        ? saved.randomizer.championsByPlayer : {};
+    next.randomizer.championsByPlayer = Object.fromEntries(next.participantIds.map(id => [id,
+        [...new Set(Array.isArray(savedChampionLists[id])
+            ? savedChampionLists[id].filter(name => typeof name === "string" && LOL_CHAMPIONS.includes(name)) : [])].slice(0, 3)
+    ]));
     return next;
 }
 
@@ -155,9 +163,15 @@ function getModuleProgress(module) {
 }
 
 function resetTournament() {
-    if (!confirm("¿Seguro que deseas reiniciar el torneo? Se borrarán enfrentamientos, resultados y sorteos. Los jugadores, perfiles y banners permanecerán registrados.")) return;
-    if (saveTournamentState(createTournamentState(), "reset")) {
-        announce("Torneo reiniciado. Tus jugadores y banners siguen registrados.");
+    if (!confirm("¿Seguro que deseas reiniciar los brackets? Se borrarán todos los cruces, participantes asignados y resultados. Tus jugadores, perfiles y banners permanecerán registrados.")) return;
+    const current = getTournamentState();
+    const reset = createTournamentState();
+    // El reinicio vuelve a dejar los cruces vacíos, pero conserva los sorteos
+    // y la configuración de jugadores fuera del bracket.
+    reset.roulette = current.roulette;
+    reset.randomizer = current.randomizer;
+    if (saveTournamentState(reset, "reset")) {
+        announce("Brackets reiniciados. Selecciona los cruces desde cero; tus jugadores y banners siguen registrados.");
     }
 }
 

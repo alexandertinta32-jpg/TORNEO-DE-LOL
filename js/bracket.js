@@ -12,7 +12,9 @@ function createModuleMatches(moduleId) {
         created: true,
         matches: Array.from({ length: Math.ceil(roster.length / 2) }, (_, index) => ({
             id: `${moduleId}-match-${index + 1}`,
-            playerIds: [roster[index * 2]?.id || null, roster[index * 2 + 1]?.id || null],
+            // Los cruces se preparan vacíos para que el organizador decida
+            // desde cero quién ocupa cada lado del bracket.
+            playerIds: [null, null],
             winnerId: null,
             derived: false
         })),
@@ -183,6 +185,23 @@ function championMarkup(module) {
     </button></div>`;
 }
 
+function syncBracketChampionTheme(state) {
+    const prefix = "bracket-theme-";
+    document.body.classList.forEach(className => {
+        if (className.startsWith(prefix)) document.body.classList.remove(className);
+    });
+    const activeModuleId = state?.currentModule;
+    const modules = TOURNAMENT_MODULES.filter(definition => definition.enabled)
+        .sort((left, right) => left.id === activeModuleId ? -1 : right.id === activeModuleId ? 1 : 0);
+    const championId = modules.map(definition => {
+        const module = state?.modules?.[definition.id];
+        return module?.matches?.find(match => match.id.endsWith("-revanch-1"))?.winnerId || null;
+    }).find(Boolean);
+    const champion = getPlayerById(championId);
+    const theme = getPlayerBanner(champion)?.theme || champion?.theme;
+    if (theme) document.body.classList.add(`${prefix}${theme}`);
+}
+
 function placementCardMarkup(rank, playerId, description, champion = false) {
     const player = getPlayerById(playerId);
     const banner = getPlayerBanner(player);
@@ -301,6 +320,7 @@ function loserBracketMarkup(module) {
 function renderBracket() {
     const state = getTournamentState();
     if (!state) return;
+    syncBracketChampionTheme(state);
     const allMatches = getTournamentMatches(state);
     const playableMatches = allMatches.filter(match => match.playerIds?.every(Boolean));
     document.getElementById("tournamentProgress").textContent = `${getPlayers().length}/8 participantes · ${playableMatches.filter(match => match.winnerId).length}/${playableMatches.length} partidas resueltas`;
