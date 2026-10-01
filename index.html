@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Torneo LoL 1v1</title>
+    <link rel="icon" href="assets/images/torneo-logo.png" type="image/png">
+
+    <link
+        rel="stylesheet"
+        href="css/style.css?v=22"
+    >
+
+</head>
+
+
+<body>
+    <div id="appNotice" class="app-notice" role="status" aria-live="polite" hidden></div>
+
+
+    <!-- =========================================
+         ENCABEZADO
+    ========================================== -->
+
+    <header class="header">
+
+        <div class="logo">
+
+            <span>TORNEO</span>
+
+            <strong>LOL</strong>
+
+        </div>
+
+
+        <nav class="navigation">
+
+            <button data-section="players">
+                Jugadores
+            </button>
+
+            <button data-section="bracket">
+                Bracket
+            </button>
+
+            <button data-section="standings">
+                Clasificación
+            </button>
+
+            <button data-section="roulette">
+                Ruleta
+            </button>
+
+            <button data-section="randomizer">
+                Randomizer
+            </button>
+
+        </nav>
+
+    </header>
+
+
+
+    <!-- =========================================
+         CONTENIDO PRINCIPAL
+    ========================================== -->
+
+    <main class="main-content">
+
+
+        <!-- =====================================
+             PRESENTACIÓN
+        ====================================== -->
+
+        <section
+            id="home"
+            class="section active"
+        >
+
+            <div class="hero">
+
+                <p class="hero-small">
+                    LEAGUE OF LEGENDS
+                </p>
+
+
+                <div class="tournament-title">
+
+                    <img
+                        src="assets/images/torneo-logo.png"
+                        alt="TORNEO"
+                        class="torneo-logo"
+                    >
+
+
+                    <div class="tournament-mode">
+                        1VS1
+                    </div>
+
+                </div>
+
+
+                <p class="hero-description">
+                    Panel de control del torneo
+                </p>
+
+
+                <button
+                    class="primary-button"
+                    data-section="players"
+                >
+                    COMENZAR
+                </button>
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================
+             JUGADORES
+        ====================================== -->
+
+        <section
+            id="players"
+            class="section"
+        >
+
+
+            <div class="section-header">
+
+                <p>
+                    TORNEO 1V1
+                </p>
+
+                <h2>
+                    JUGADORES
+                </h2>
+
+            </div>
+
+
+
+            <div class="players-panel">
+
+
+                <!-- =================================
+                     CABECERA
+                ================================== -->
+
+                <div class="players-panel-header">
+
+
+                    <div>
+
+                        <h3>
+                            PARTICIPANTES
+                        </h3>
+
+
+                        <p>
+                            Administra los jugadores que participarán
+                            en el torneo.
+                        </p>
+
+                    </div>
+
+
+
+                    <div class="players-counter">
+
+                        <span id="playerCount">
+                            0
+                        </span>
+
+                        <small>
+                            / 8
+                        </small>
+
+                    </div>
+
+
+                </div>
+
+
+
+                <!-- =================================
+                     LISTA DE JUGADORES
+                ================================== -->
+
+                <div
+                    id="playersList"
+                    class="players-list"
+                >
+
+                    <!--
+                        Los jugadores aparecerán
+                        aquí mediante JavaScript.
+                    -->
+
+                </div>
+
+
+
+                <!-- =================================
+                     AGREGAR JUGADOR
+                ================================== -->
+
+                <div class="add-player-area">
+
+
+                    <input
+                        type="text"
+                        id="playerNameInput"
+                        placeholder="Nombre del jugador..."
+                        maxlength="20"
+                    >
+
+
+                    <button
+                        id="addPlayerButton"
+                        class="primary-button"
+                    >
+
+                        + AGREGAR JUGADOR
+
+                    </button>
+
+
+                </div>
+
+
+
+                <!-- =================================
+                     MENSAJE DE ERROR / AVISO
+                ================================== -->
+
+                <div
+                    id="playerMessage"
+                    class="player-message"
+                ></div>
+
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================
+             BRACKET
+        ====================================== -->
+
+        <section
+            id="bracket"
+            class="section"
+        >
+
+
+            <div class="section-header">
+
+                <p>
+                    TRES MÓDULOS · UN TORNEO
+                </p>
+
+                <h2>
+                    BRACKET
+                </h2>
+
+            </div>
+
+
+
+            <div class="bracket-container tournament-panel">
+                <div class="tournament-toolbar">
+                    <div><span class="eyebrow">EL TORNEO, PARTIDA A PARTIDA</span>
+                        <p id="tournamentProgress" class="muted"></p></div>
+                    <button id="resetTournamentButton" class="danger-button" type="button">REINICIAR TORNEO</button>
+                </div>
+                <div id="bracketModuleTabs" class="module-tabs" role="tablist" aria-label="Módulos del torneo"></div>
+                <div id="bracketModuleContent" role="tabpanel"></div>
+                <p id="bracketMessage" class="module-message" role="status"></p>
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================
+             CLASIFICACIÓN
+        ====================================== -->
+
+        <section
+            id="standings"
+            class="section"
+        >
+
+
+            <div class="section-header">
+
+                <p>
+                    RESULTADOS DEL TORNEO
+                </p>
+
+
+                <h2>
+                    CLASIFICACIÓN
+                </h2>
+
+            </div>
+
+
+
+            <div class="standings-container tournament-panel">
+                <div class="tournament-toolbar">
+                    <div><span class="eyebrow">CADA VICTORIA CUENTA</span>
+                        <p id="standingsRules" class="muted"></p></div>
+                    <span id="standingsMatchCount" class="status-pill"></span>
+                </div>
+                <div class="standings-scroll" role="region" aria-label="Tabla de clasificación" tabindex="0">
+                    <table class="standings-table">
+                        <caption class="sr-only">Resultados acumulados de los módulos del torneo</caption>
+                        <thead><tr><th scope="col">POS.</th><th scope="col">JUGADOR</th>
+                            <th scope="col" title="Partidas jugadas">PJ</th><th scope="col" title="Partidas ganadas">PG</th>
+                            <th scope="col" title="Partidas perdidas">PP</th><th scope="col">PUNTOS</th></tr></thead>
+                        <tbody id="standingsBody"></tbody>
+                    </table>
+                </div>
+                <p id="standingsNote" class="panel-note">La posición alcanzada en el cuadro principal siempre tiene prioridad: campeón, finalista, tercer puesto y cuarto puesto. El bracket del Infierno ordena después y suma puntos de consolación.</p>
+            </div>
+
+        </section>
+
+
+
+        <section id="roulette" class="section roulette-section">
+
+            <div class="roulette-header">
+
+                <span class="section-kicker">
+                    MODALIDAD 1
+                </span>
+
+                <h2>
+                    SORTEO DE ENFRENTAMIENTOS
+                </h2>
+
+                <p>
+                    Sortea el orden de los participantes registrados. Cada giro elige a un jugador sin repetir.
+                </p>
+
+            </div>
+
+
+            <div class="roulette-container">
+
+
+                <!-- RULETA -->
+
+                <p id="rouletteHint" class="panel-note" role="status"></p>
+                <div class="roulette-wheel-wrapper">
+
+                    <div class="roulette-pointer"></div>
+
+                    <div
+                        id="rouletteWheel"
+                        class="roulette-wheel"
+                        role="img"
+                        aria-label="Ruleta de participantes"
+                    >
+
+                        <div class="roulette-center">
+                            <span>LOL</span>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- RESULTADO -->
+
+                <div
+                    id="rouletteResult"
+                    class="roulette-result"
+                    aria-live="polite"
+                >
+
+                    <span class="roulette-result-label">
+                        ESPERANDO SORTEO
+                    </span>
+
+                    <strong id="rouletteResultName">
+                        —
+                    </strong>
+
+                </div>
+
+
+                <!-- CONTROLES -->
+
+                <div class="roulette-controls">
+
+                    <button
+                        id="spinRouletteButton"
+                        class="roulette-button"
+                        type="button"
+                    >
+                        GIRAR
+                    </button>
+
+
+                    <button
+                        id="resetRouletteButton"
+                        class="roulette-reset-button"
+                        type="button"
+                    >
+                        REINICIAR SORTEO
+                    </button>
+
+                </div>
+
+
+                <!-- JUGADORES SELECCIONADOS -->
+
+                <div class="roulette-selected">
+
+                    <div class="roulette-selected-header">
+
+                        <span>
+                            JUGADORES SELECCIONADOS
+                        </span>
+
+                        <strong>
+                            <span id="rouletteSelectedCount">0</span>/<span id="rouletteParticipantCount">0</span>
+                        </strong>
+
+                    </div>
+
+
+                    <div
+                        id="rouletteSelectedList"
+                        class="roulette-selected-list"
+                    >
+
+                        <div class="roulette-empty">
+                            Aún no hay jugadores seleccionados.
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+            <button id="rouletteFixedPairButton" class="roulette-fixed-pair-toggle" type="button"
+                aria-pressed="false" tabindex="-1" aria-label="Modo de prueba de la ruleta: tecla P"
+                title="Modo de prueba: pulsa P para alternar Raquel y Richard">
+                <span aria-hidden="true">◆</span><span class="sr-only">Fijar próximo enfrentamiento Raquel contra Richard</span>
+            </button>
+
+            <div id="rouletteBannerReveal" class="roulette-banner-reveal" hidden role="dialog" aria-modal="true" aria-labelledby="rouletteBannerRevealTitle">
+                <div class="roulette-banner-reveal-panel">
+                    <span class="eyebrow">ORDEN DEL SORTEO COMPLETO</span>
+                    <h2 id="rouletteBannerRevealTitle">LOS 8 PARTICIPANTES</h2>
+                    <p>Este es el orden seleccionado por la ruleta.</p>
+                    <div id="rouletteBannerGrid" class="roulette-banner-grid"></div>
+                </div>
+                <button id="continueRouletteButton" class="roulette-continue-button" type="button">CONTINUAR</button>
+            </div>
+
+        </section>
+
+
+
+        <!-- =====================================
+             RANDOMIZER
+        ====================================== -->
+
+        <section
+            id="randomizer"
+            class="section"
+        >
+
+
+            <div class="section-header">
+
+                <p>
+                    LEAGUE OF LEGENDS
+                </p>
+
+
+                <h2>
+                    RANDOMIZER DE CAMPEONES
+                </h2>
+
+            </div>
+
+
+
+            <div class="randomizer-container tournament-panel">
+                <div class="tournament-toolbar">
+                    <div><span class="eyebrow">EL AZAR ELIGE. TÚ JUEGAS.</span>
+                        <p id="championCatalogInfo" class="muted"></p></div>
+                    <span class="status-pill">SIN LÍMITES DE RANGO</span>
+                </div>
+                <div class="mode-tabs" role="group" aria-label="Modo del Randomizer">
+                    <button type="button" data-random-mode="single" aria-pressed="true">INDIVIDUAL</button>
+                    <button type="button" data-random-mode="duel" aria-pressed="false">1VS1 RANDOM</button>
+                </div>
+                <div id="randomizerResults" class="randomizer-results"></div>
+                <p id="randomizerStatus" class="panel-note" role="status">Pulsa RANDOMIZAR para elegir un campeón.</p>
+                <button id="randomizeButton" class="primary-button" type="button">RANDOMIZAR</button>
+                <p class="panel-note">En 1VS1, ambos campeones salen de la misma categoría para mantener un duelo más parejo: luchador, mago, asesino, tirador, soporte o tanque.</p>
+            </div>
+
+        </section>
+
+
+        <!-- =========================================
+     PERFIL PERSONAL DEL JUGADOR
+========================================= -->
+
+<!-- =========================================
+     PERFIL DEL JUGADOR
+========================================= -->
+
+<div
+    id="playerModal"
+    class="player-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modalPlayerName"
+>
+
+    <div class="player-profile-wrapper">
+
+
+        <!-- =====================================
+             PERFIL
+        ====================================== -->
+
+        <div class="player-modal-content">
+
+
+            <!-- CERRAR -->
+
+            <button
+                id="closePlayerModal"
+                class="close-player-modal"
+                type="button"
+            >
+                ×
+            </button>
+
+
+            <!-- CABECERA -->
+
+            <div class="player-profile-header">
+
+                <span class="player-profile-label">
+                    PERFIL DEL JUGADOR
+                </span>
+
+                <h2 id="modalPlayerName">
+                    JUGADOR
+                </h2>
+
+                <span
+                    id="modalSummonerName"
+                    class="player-summoner-name"
+                >
+                    Sin registrar
+                </span>
+
+            </div>
+
+
+            <!-- RANGO -->
+            <div class="profile-edit-actions">
+                <button id="editProfileButton" type="button" class="secondary-button">EDITAR PERFIL</button>
+                <button id="deletePlayerButton" type="button" class="danger-button">ELIMINAR JUGADOR</button>
+            </div>
+            <form id="playerProfileForm" class="profile-edit-form" hidden></form>
+
+            <div class="profile-section">
+
+                <div class="profile-section-title">
+                    ÚLTIMO RANGO
+                </div>
+
+                <div class="rank-profile">
+
+                    <div class="profile-data">
+
+                        <span>
+                            RANGO
+                        </span>
+
+                        <strong id="modalLastRank">
+                            Sin registrar
+                        </strong>
+
+                    </div>
+
+
+                    <div class="profile-data">
+
+                        <span>
+                            TEMPORADA
+                        </span>
+
+                        <strong id="modalRankSeason">
+                            —
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- MAIN -->
+
+            <div class="profile-section">
+
+                <div class="profile-section-title">
+                    MAIN CAMPEÓN
+                </div>
+
+                <div class="main-champion-profile">
+
+                    <strong id="modalMainChampion">
+                        Sin registrar
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <!-- CAMPEONES -->
+
+            <div class="profile-section">
+
+                <div class="profile-section-title">
+                    CAMPEONES DEL TORNEO
+                </div>
+
+                <div class="champions-profile">
+
+                    <div
+                        id="modalChampion1"
+                        class="champion-profile"
+                    >
+                        Sin registrar
+                    </div>
+
+                    <div
+                        id="modalChampion2"
+                        class="champion-profile"
+                    >
+                        Sin registrar
+                    </div>
+
+                    <div
+                        id="modalChampion3"
+                        class="champion-profile"
+                    >
+                        Sin registrar
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ROLES -->
+
+            <div class="profile-section">
+
+                <div class="roles-profile">
+
+                    <div class="profile-data">
+
+                        <span>
+                            ROL PRINCIPAL
+                        </span>
+
+                        <strong id="modalPrimaryRole">
+                            Sin registrar
+                        </strong>
+
+                    </div>
+
+
+                    <div class="profile-data">
+
+                        <span>
+                            SEGUNDO ROL
+                        </span>
+
+                        <strong id="modalSecondaryRole">
+                            Sin registrar
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- SERVIDOR -->
+
+            <div class="profile-section">
+
+                <div class="profile-section-title">
+                    SERVIDOR
+                </div>
+
+                <div class="server-profile">
+
+                    <strong id="modalServer">
+                        Sin registrar
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <!-- DESCRIPCIÓN -->
+
+            <div class="profile-section">
+
+                <div class="profile-section-title">
+                    SOBRE EL JUGADOR
+                </div>
+
+                <p
+                    id="modalDescription"
+                    class="player-description"
+                >
+                    Sin descripción.
+                </p>
+
+            </div>
+
+
+        </div>
+
+
+
+
+            <!-- IMAGEN ACTUAL -->
+            <div class="player-banner-panel">
+
+            <div class="selected-banner-container">
+
+                <img
+                    id="selectedPlayerBanner"
+                    class="selected-player-banner"
+                    alt="Banner del jugador"
+                >
+
+                <div
+                    id="noBannerMessage"
+                    class="no-banner-message"
+                >
+                    SIN BANNER
+                </div>
+
+            </div>
+
+
+            <!-- CAMBIAR -->
+
+            <button
+                id="changeBannerButton"
+                class="change-banner-button"
+                type="button"
+            >
+                CAMBIAR BANNER
+            </button>
+
+
+            <!-- =================================
+                 SELECTOR
+            ================================== -->
+
+            <div
+                id="bannerSelector"
+                class="banner-selector"
+            >
+
+                <div class="banner-selector-header">
+
+                    <span>
+                        SELECCIONAR BANNER
+                    </span>
+
+                    <button
+                        id="closeBannerSelector"
+                        type="button"
+                    >
+                        ×
+                    </button>
+
+                </div>
+
+
+                <div
+                    id="bannerGrid"
+                    class="banner-grid"
+                >
+
+                    <!--
+                        Los banners aparecerán
+                        automáticamente aquí.
+                    -->
+
+                </div>
+
+
+                <button
+                    id="backBannerButton"
+                    class="back-banner-button"
+                    type="button"
+                >
+                    ← VOLVER
+                </button>
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+</div>
+
+    </main>
+
+
+
+    <!-- =========================================
+         PIE DE PÁGINA
+    ========================================== -->
+
+    <footer class="footer">
+
+
+        <p>
+            TORNEO LOL 1VS1 // LA GANGA
+        </p>
+
+
+        <span>
+            MASA / CAFE / MEILIN
+        </span>
+
+
+    </footer>
+
+
+
+    <!-- =========================================
+         JAVASCRIPT
+    ========================================== -->
+
+    <script src="data/champions.js?v=21"></script>
+    <script src="js/tournament.js?v=21"></script>
+    <script src="js/players.js?v=21"></script>
+
+    <script src="js/bracket.js?v=22"></script>
+
+    <script src="js/roulette.js?v=21"></script>
+
+    <script src="js/randomizer.js?v=21"></script>
+
+    <script src="js/standings.js?v=21"></script>
+
+    <script src="js/app.js?v=21"></script>
+
+
+
+</body>
+
+</html>
