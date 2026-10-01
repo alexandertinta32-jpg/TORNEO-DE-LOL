@@ -3843,7 +3843,7 @@ select, .profile-edit-form input, .profile-edit-form textarea { width: 100%; min
 
 /* El campeón de la revancha tiñe la pantalla con el tema de su banner. */
 body[class*="bracket-theme-"] {
-    background-image: linear-gradient(135deg, color-mix(in srgb, var(--bracket-theme-primary) 20%, transparent), rgba(1, 7, 15, .46)), url("../assets/backgrounds/torneo-bg.jpg");
+    background-image: linear-gradient(135deg, color-mix(in srgb, var(--bracket-theme-primary) 30%, rgba(2, 18, 38, .80) 70%), rgba(1, 7, 15, .90)), url("../assets/backgrounds/torneo-bg.jpg");
     background-color: #030b16;
 }
 body[class*="bracket-theme-"] .header { border-bottom-color: var(--bracket-theme-primary); box-shadow: 0 0 24px color-mix(in srgb, var(--bracket-theme-primary) 28%, transparent); }
