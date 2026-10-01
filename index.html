@@ -15,7 +15,7 @@
 
     <link
         rel="stylesheet"
-        href="css/style.css?v=36"
+        href="css/style.css?v=38"
     >
 
 </head>
@@ -510,8 +510,10 @@
                 <div class="trophy-stats-scroll"><table class="trophy-stats-table"><thead><tr><th>JUGADOR</th><th>MINIONS</th><th>KILLS</th><th>TORRETAS</th></tr></thead><tbody id="trophyStatsBody"></tbody></table></div>
                 <div class="tournament-toolbar trophy-section-heading"><div><span class="eyebrow">CLASIFICACIÓN DEL MÓDULO 3</span><p class="muted">El 2 VS 2 se muestra por posiciones y no suma puntos a la tabla 1 VS 1.</p></div></div>
                 <div id="teamStandingBody" class="team-standing-list"></div>
-                <div class="tournament-toolbar trophy-section-heading"><div><span class="eyebrow">MEJORES JUGADAS</span><p class="muted">Puedes cargar clips desde tu computadora. Quedan guardados en este navegador para revisarlos después.</p></div></div>
-                <div class="clip-upload"><label for="clipPlayerSelect">JUGADOR DEL CLIP<select id="clipPlayerSelect"><option value="">Sin jugador asignado</option></select></label><label for="clipInput" class="clip-upload-button">SUBIR CLIPS<input id="clipInput" type="file" accept="video/*" multiple></label></div>
+                <div class="tournament-toolbar trophy-section-heading"><div><span class="eyebrow">MEJORES JUGADAS</span><p class="muted">Los clips se compartirán entre dispositivos y visitantes al conectar el almacenamiento gratuito.</p></div></div>
+                <div class="clip-cloud-tools"><span id="clipCloudStatus" role="status">Preparando almacenamiento de clips…</span><button id="clipAdminToggle" class="secondary-button" type="button" hidden>INGRESAR PARA SUBIR</button><button id="clipAdminLogout" class="secondary-button" type="button" hidden>CERRAR SESIÓN</button></div>
+                <form id="clipAdminLogin" class="clip-admin-login" hidden><label>Correo<input id="clipAdminEmail" type="email" autocomplete="username" required></label><label>Contraseña<input id="clipAdminPassword" type="password" autocomplete="current-password" required></label><button class="primary-button" type="submit">INGRESAR</button><p id="clipAdminMessage" role="status"></p></form>
+                <div class="clip-upload" id="clipUploadControls" hidden><label for="clipPlayerSelect">JUGADOR DEL CLIP<select id="clipPlayerSelect"><option value="">Sin jugador asignado</option></select></label><label for="clipInput" class="clip-upload-button">SUBIR CLIPS<input id="clipInput" type="file" accept="video/*" multiple></label></div>
                 <div id="clipList" class="clip-list"><p class="empty-state">Todavía no hay clips cargados.</p></div>
             </div>
         </section>
@@ -927,7 +929,7 @@
     <script src="data/champions.js?v=21"></script>
     <script src="data/champion-images.js?v=1"></script>
     <script src="js/tournament.js?v=22"></script>
-    <script src="js/players.js?v=22"></script>
+    <script src="js/players.js?v=23"></script>
 
     <script src="js/bracket.js?v=29"></script>
 
@@ -937,7 +939,9 @@
 
     <script src="js/standings.js?v=22"></script>
 
-    <script src="js/trophies.js?v=4"></script>
+    <script src="data/supabase-config.js?v=1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js"></script>
+    <script src="js/trophies.js?v=5"></script>
 
     <script src="js/app.js?v=21"></script>
 

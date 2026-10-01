@@ -1,6 +1,7 @@
 /* =========================================
    TROFEOS — ESTADÍSTICAS, 2VS2 Y CLIPS
-   Las estadísticas se guardan en localStorage y los clips en IndexedDB del navegador.
+   Las estadísticas se guardan en localStorage. Los clips se comparten con Supabase
+   cuando está configurado, con copia local de respaldo en IndexedDB.
 ========================================= */
 const TROPHY_STATS_KEY = "torneoLOL_trophy_stats_v1";
 const CLIP_DB_NAME = "torneoLOL_trophy_clips_v1";
@@ -8,6 +9,12 @@ const CLIP_STORE_NAME = "clips";
 let trophyStats = {};
 let clipDatabase = null;
 const clipObjectUrls = new Map();
+const clipConfig = window.TORNEO_SUPABASE_CONFIG || {};
+const clipBucket = clipConfig.bucket || "torneo-clips";
+const clipSupabaseReady = Boolean(clipConfig.url && clipConfig.anonKey && window.supabase?.createClient);
+const clipSupabase = clipSupabaseReady ? window.supabase.createClient(clipConfig.url, clipConfig.anonKey) : null;
+let clipAdminSession = null;
+let remoteClips = [];
 
 function readTrophyStats() {
     try {
@@ -137,38 +144,163 @@ function deleteClip(id) {
 async function renderClips() {
     const target = document.getElementById("clipList");
     if (!target) return;
-    const clips = await readClips();
+    const localClips = await readClips();
     clipObjectUrls.forEach(url => URL.revokeObjectURL(url));
     clipObjectUrls.clear();
+    const remoteIds = new Set(remoteClips.map(clip => clip.id));
+    const clips = [
+        ...remoteClips,
+        ...localClips.filter(clip => !clip.cloudPath && !remoteIds.has(clip.id)).map(clip => ({ ...clip, local: true }))
+    ];
     if (!clips.length) {
         target.innerHTML = '<p class="empty-state">Todavía no hay clips cargados.</p>';
         return;
     }
     target.innerHTML = clips.sort((a, b) => b.createdAt - a.createdAt).map(clip => {
-        const url = URL.createObjectURL(clip.file);
-        clipObjectUrls.set(clip.id, url);
-        const player = getPlayerById(clip.playerId);
-        return `<article class="clip-card"><video controls preload="metadata" src="${url}"></video><div><strong>${escapeHTML(clip.title)}</strong><small>${escapeHTML(player?.name || "Sin jugador asignado")}</small></div><button type="button" class="text-button" data-delete-clip="${escapeHTML(clip.id)}">Eliminar</button></article>`;
+        const url = clip.local ? URL.createObjectURL(clip.file) : clip.url;
+        if (clip.local) clipObjectUrls.set(clip.id, url);
+        const playerName = clip.playerName || getPlayerById(clip.playerId)?.name || "Sin jugador asignado";
+        const deleteButton = clipAdminSession && clip.cloudPath ? `<button type="button" class="text-button" data-delete-clip="${escapeHTML(clip.cloudPath)}">Eliminar</button>` : clip.local && !clipSupabaseReady ? `<button type="button" class="text-button" data-delete-local-clip="${escapeHTML(clip.id)}">Eliminar</button>` : "";
+        return `<article class="clip-card"><video controls preload="metadata" src="${escapeHTML(url)}"></video><div><strong>${escapeHTML(clip.title)}</strong><small>${escapeHTML(playerName)}</small></div>${deleteButton}</article>`;
     }).join("");
+}
+
+function setClipStatus(message) {
+    const status = document.getElementById("clipCloudStatus");
+    if (status) status.textContent = message;
+}
+
+function decodeClipPart(part) {
+    try { return decodeURIComponent(part || ""); } catch { return part || ""; }
+}
+
+async function refreshSharedClips() {
+    if (!clipSupabaseReady) {
+        remoteClips = [];
+        setClipStatus("Clips guardados en este navegador. La nube gratuita aún no está configurada.");
+        document.getElementById("clipAdminToggle")?.setAttribute("hidden", "");
+        document.getElementById("clipUploadControls")?.removeAttribute("hidden");
+        await renderClips();
+        return;
+    }
+    const { data, error } = await clipSupabase.storage.from(clipBucket).list("", { limit: 1000, sortBy: { column: "created_at", order: "desc" } });
+    if (error) {
+        remoteClips = [];
+        const toggle = document.getElementById("clipAdminToggle");
+        if (toggle) { toggle.hidden = Boolean(clipAdminSession); toggle.textContent = "INGRESAR PARA SUBIR"; }
+        const logout = document.getElementById("clipAdminLogout");
+        if (logout) logout.hidden = !clipAdminSession;
+        const upload = document.getElementById("clipUploadControls");
+        if (upload) upload.hidden = !clipAdminSession;
+        setClipStatus("No se pudieron cargar los clips compartidos. Revisa la configuración del almacenamiento.");
+        await renderClips();
+        return;
+    }
+    remoteClips = (data || []).filter(item => item.name && !item.name.startsWith("." )).map(item => {
+        const [id, rawPlayer, ...rawTitle] = item.name.split("--");
+        const title = decodeClipPart(rawTitle.join("--")) || item.name;
+        const playerName = decodeClipPart(rawPlayer);
+        const { data: publicData } = clipSupabase.storage.from(clipBucket).getPublicUrl(item.name);
+        return { id, title, playerName, createdAt: Date.parse(item.created_at || item.updated_at || "") || Date.now(), cloudPath: item.name, url: publicData.publicUrl };
+    });
+    const toggle = document.getElementById("clipAdminToggle");
+    const logout = document.getElementById("clipAdminLogout");
+    const upload = document.getElementById("clipUploadControls");
+    const loggedIn = Boolean(clipAdminSession);
+    if (toggle) { toggle.hidden = loggedIn; toggle.textContent = "INGRESAR PARA SUBIR"; }
+    if (logout) logout.hidden = !loggedIn;
+    if (upload) upload.hidden = !loggedIn;
+    setClipStatus(loggedIn ? "Clips compartidos activos. Puedes subir nuevos videos." : "Clips compartidos activos. Inicia sesión para subir videos.");
+    await renderClips();
+}
+
+function makeClipPath(id, playerName, title) {
+    return `${id}--${encodeURIComponent(playerName || "")}--${encodeURIComponent(title)}`;
+}
+
+async function syncLocalClipsToCloud() {
+    const localClips = await readClips();
+    let failed = 0;
+    let tooLarge = 0;
+    for (const clip of localClips.filter(item => !item.cloudPath)) {
+        if (!clip.file) continue;
+        if (clip.file.size > 50 * 1024 * 1024) { tooLarge += 1; continue; }
+        const playerName = getPlayerById(clip.playerId)?.name || clip.playerName || "";
+        const path = makeClipPath(clip.id, playerName, clip.title || clip.file.name);
+        const { error } = await clipSupabase.storage.from(clipBucket).upload(path, clip.file, { contentType: clip.file.type || "video/mp4", cacheControl: "3600", upsert: false });
+        if (!error || error.message?.toLowerCase().includes("already exists")) {
+            await saveClip({ ...clip, cloudPath: path, playerName });
+        } else failed += 1;
+    }
+    await refreshSharedClips();
+    if (tooLarge || failed) setClipStatus(`Sincronización parcial: ${tooLarge} clip(s) superan 50 MB y ${failed} no se pudieron copiar. Los originales siguen guardados en este navegador.`);
+}
+
+async function uploadClips(files) {
+    const select = document.getElementById("clipPlayerSelect");
+    const playerId = select?.value || null;
+    const playerName = getPlayerById(playerId)?.name || "";
+    for (const file of files) {
+        if (!file.type.startsWith("video/")) continue;
+        if (clipSupabaseReady) {
+            if (!clipAdminSession) { setClipStatus("Inicia sesión para subir clips compartidos."); continue; }
+            if (file.size > 50 * 1024 * 1024) { setClipStatus(`${file.name} supera el límite gratuito de 50 MB.`); continue; }
+            const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+            const path = makeClipPath(id, playerName, file.name);
+            setClipStatus(`Subiendo ${file.name}…`);
+            const { error } = await clipSupabase.storage.from(clipBucket).upload(path, file, { contentType: file.type, cacheControl: "3600", upsert: false });
+            if (error) { setClipStatus(`No se pudo subir ${file.name}: ${error.message}`); continue; }
+        } else {
+            await saveClip({ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, title: file.name, playerId, playerName, file, createdAt: Date.now() });
+        }
+    }
+    await refreshSharedClips();
 }
 
 document.getElementById("saveTrophyStatsButton")?.addEventListener("click", saveTrophyStats);
 document.getElementById("resetTrophyStatsButton")?.addEventListener("click", resetTrophyStats);
 document.getElementById("clipInput")?.addEventListener("change", async event => {
-    const playerId = document.getElementById("clipPlayerSelect")?.value || null;
-    for (const file of [...event.target.files]) {
-        await saveClip({ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, title: file.name, playerId, file, createdAt: Date.now() });
-    }
+    await uploadClips([...event.target.files]);
     event.target.value = "";
-    renderClips();
 });
 document.getElementById("clipList")?.addEventListener("click", async event => {
     const button = event.target.closest("[data-delete-clip]");
-    if (!button) return;
-    await deleteClip(button.dataset.deleteClip);
-    renderClips();
+    if (button && clipAdminSession) {
+        const { error } = await clipSupabase.storage.from(clipBucket).remove([button.dataset.deleteClip]);
+        if (error) setClipStatus(`No se pudo eliminar el clip: ${error.message}`);
+        await refreshSharedClips();
+        return;
+    }
+    const localButton = event.target.closest("[data-delete-local-clip]");
+    if (localButton) { await deleteClip(localButton.dataset.deleteLocalClip); renderClips(); }
 });
-document.addEventListener("DOMContentLoaded", () => { trophyStats = readTrophyStats(); renderTrophies(); });
+document.getElementById("clipAdminToggle")?.addEventListener("click", () => { document.getElementById("clipAdminLogin").hidden = false; });
+document.getElementById("clipAdminLogin")?.addEventListener("submit", async event => {
+    event.preventDefault();
+    const message = document.getElementById("clipAdminMessage");
+    const email = document.getElementById("clipAdminEmail").value.trim();
+    const password = document.getElementById("clipAdminPassword").value;
+    const { data, error } = await clipSupabase.auth.signInWithPassword({ email, password });
+    if (error) { message.textContent = "No se pudo iniciar sesión. Revisa el correo y la contraseña."; return; }
+    clipAdminSession = data.session;
+    document.getElementById("clipAdminPassword").value = "";
+    document.getElementById("clipAdminLogin").hidden = true;
+    await syncLocalClipsToCloud();
+});
+document.getElementById("clipAdminLogout")?.addEventListener("click", async () => {
+    await clipSupabase.auth.signOut();
+    clipAdminSession = null;
+    await refreshSharedClips();
+});
+document.addEventListener("DOMContentLoaded", async () => {
+    trophyStats = readTrophyStats();
+    renderTrophies();
+    if (clipSupabaseReady) {
+        const { data } = await clipSupabase.auth.getSession();
+        clipAdminSession = data.session;
+    }
+    await refreshSharedClips();
+});
 document.addEventListener("players:changed", renderTrophies);
 document.addEventListener("tournament:changed", event => {
     if (["bracket", "result", "reset"].includes(event.detail.reason)) renderTrophies();

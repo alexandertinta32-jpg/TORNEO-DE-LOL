@@ -1,6 +1,6 @@
 # Torneo LoL 1v1
 
-Página estática para administrar un torneo personalizado de League of Legends. Se ejecuta directamente con Live Server y no necesita backend, framework ni base de datos externa.
+Página estática para administrar un torneo personalizado de League of Legends. Se ejecuta con Live Server o GitHub Pages; el almacenamiento compartido de clips es opcional y usa el plan gratuito de Supabase.
 
 ## Cómo abrirla
 
@@ -18,7 +18,17 @@ Abre `index.html` con Live Server. La vista local de desarrollo usada durante es
 - `js/roulette.js` dibuja nombres desde los jugadores y guarda solamente el historial del sorteo. Al completar ocho selecciones muestra los ocho banners en orden, reproduce `assets/sounds/EEG.mp3` y permite cerrar la pantalla con CONTINUAR. No modifica el bracket automáticamente.
 - `data/champions.js` contiene el catálogo local de 173 campeones de Data Dragon 16.19.1 (`es_MX`), sin descargar imágenes.
 - `js/randomizer.js` admite sorteo individual por jugador y modo 1VS1, mostrando los iconos locales de Riot durante la animación y el resultado. En individual, cada giro se guarda en el apartado del participante activo hasta un máximo de tres campeones, sin repetir dentro de su lista; cada posición comparte su categoría entre todos los jugadores para equilibrar las opciones. El botón de reinicio borra listas y categorías del randomizer; en 1VS1 selecciona una categoría compartida.
-- `js/trophies.js` guarda estadísticas editables de minions, kills y torretas, muestra rankings separados, posiciones del módulo 3 y permite cargar clips en el almacenamiento local del navegador mediante IndexedDB.
+- `js/trophies.js` guarda estadísticas editables de minions, kills y torretas, muestra rankings separados y posiciones del módulo 3. Los clips se guardan localmente mientras no se configure Supabase; con Supabase quedan públicos para reproducirse en otros dispositivos y solo la cuenta organizadora autenticada puede subirlos o borrarlos.
+
+## Activar clips compartidos gratis
+
+1. Crea un proyecto gratuito en [Supabase](https://supabase.com/dashboard). El plan gratis incluye 1 GB de archivos y un tamaño máximo por archivo de 50 MB; el proyecto puede pausarse si permanece inactivo.
+2. En Authentication, desactiva los registros públicos y crea una cuenta solo para quien administrará los clips. No compartas la contraseña con los visitantes.
+3. En SQL Editor, ejecuta `supabase/clips-storage.sql`. El bucket `torneo-clips` permitirá que cualquiera reproduzca los videos y limitará las cargas y eliminaciones a usuarios autenticados.
+4. En Project Settings → API, copia Project URL y la clave pública `publishable` (o `anon` heredada) en `data/supabase-config.js`, en `url` y `anonKey`. Nunca uses una clave `service_role` en la página.
+5. Publica esos cambios. Las personas podrán ver los clips al abrir la página; para subirlos, inicia sesión con la cuenta organizadora. Los clips que ya estén en IndexedDB en ese navegador se copiarán al almacenamiento compartido la primera vez que inicies sesión.
+
+La clave pública aparece en el código del sitio, como es normal en una aplicación web; las políticas del bucket son las que limitan las operaciones de escritura. Mientras falte la configuración, la página conserva el funcionamiento local de clips en ese navegador.
 
 ## Reglas provisionales
 

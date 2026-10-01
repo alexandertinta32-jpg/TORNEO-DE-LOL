@@ -758,6 +758,51 @@ body {
     text-overflow: ellipsis;
 }
 
+.player-card-banner {
+    display: block;
+    width: 38px;
+    height: 54px;
+    flex: 0 0 38px;
+    object-fit: cover;
+    object-position: center 28%;
+    border: 1px solid #7896b555;
+    border-radius: 4px;
+    background: #071526;
+    box-shadow: 0 3px 10px #0005;
+}
+
+.player-card-banner-placeholder {
+    display: grid;
+    width: 38px;
+    height: 54px;
+    flex: 0 0 38px;
+    place-items: center;
+    border: 1px dashed #526981;
+    border-radius: 4px;
+    background: #081727;
+    color: #7890aa;
+    font-weight: 800;
+}
+
+.player-card[data-banner-theme="cafe"] { --player-theme-accent: #ff6739; }
+.player-card[data-banner-theme="masa"] { --player-theme-accent: #f3ae37; }
+.player-card[data-banner-theme="meilin"] { --player-theme-accent: #f36db0; }
+.player-card[data-banner-theme="richard"] { --player-theme-accent: #32c38b; }
+.player-card[data-banner-theme="myles"] { --player-theme-accent: #25a9ff; }
+.player-card[data-banner-theme="chato"] { --player-theme-accent: #4e96ff; }
+.player-card[data-banner-theme="evan"] { --player-theme-accent: #ff4d61; }
+.player-card[data-banner-theme="raquel"] { --player-theme-accent: #b077ff; }
+.player-card[data-banner-theme="cafe"],
+.player-card[data-banner-theme="masa"],
+.player-card[data-banner-theme="meilin"],
+.player-card[data-banner-theme="richard"],
+.player-card[data-banner-theme="myles"],
+.player-card[data-banner-theme="chato"],
+.player-card[data-banner-theme="evan"],
+.player-card[data-banner-theme="raquel"] {
+    border-left: 3px solid var(--player-theme-accent);
+}
+
 
 /* =========================================
    ÁREA AGREGAR JUGADOR
@@ -2932,6 +2977,11 @@ body.modal-open {
     margin: 20px auto 30px;
 }
 
+.banner-option.is-selected {
+    border-color: #f0c85e;
+    box-shadow: 0 0 18px #e8bd4c55;
+}
+
 .saved-roster-toggle {
     flex: 0 0 auto;
     padding: 10px 13px;
@@ -4057,6 +4107,14 @@ body[class*="bracket-theme-"] .randomizer-engine .champion-media > span { border
 .clip-card strong, .clip-card small { display: block; overflow-wrap: anywhere; }
 .clip-card strong { color: #fff; font-size: 12px; }
 .clip-card small { margin-top: 4px; color: #8da8be; font-size: 10px; }
+.clip-cloud-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; padding: 12px 14px; border: 1px solid #31516d; border-radius: 7px; background: #081a2c; }
+.clip-cloud-tools [role="status"] { color: #a8c4dc; font-size: 11px; }
+.clip-cloud-tools button { margin: 0; }
+.clip-admin-login { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 14px 0; padding: 14px; border: 1px solid #35546d; border-radius: 7px; background: #09192a; }
+.clip-admin-login label { display: grid; flex: 1 1 200px; gap: 6px; color: #8eabc5; font-size: 9px; font-weight: 800; letter-spacing: 1px; }
+.clip-admin-login input { margin: 0; }
+.clip-admin-login button { margin: 0; }
+.clip-admin-login p { flex-basis: 100%; margin: 0; color: #ffb7a9; font-size: 11px; }
 @media (max-width: 800px) {
     .team-setup-grid, .trophy-rankings { grid-template-columns: 1fr 1fr; }
     .team-standing-row { grid-template-columns: 38px minmax(0, 1fr); }

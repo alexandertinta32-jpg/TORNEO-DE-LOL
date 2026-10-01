@@ -8,6 +8,7 @@ const PLAYERS_STORAGE_KEY = "torneoLOL_players";
 const SAVED_PLAYERS_STORAGE_KEY = "torneoLOL_saved_players_v1";
 const CUSTOM_PLAYERS_STORAGE_KEY = "torneoLOL_custom_players_v1";
 const SAVED_PLAYERS_MODE_KEY = "torneoLOL_saved_players_active_v1";
+const SAVED_ROSTER_BANNERS_VERSION_KEY = "torneoLOL_saved_roster_banners_v1";
 
 
 /* =========================================
@@ -306,6 +307,10 @@ function renderBannerSelector() {
 
         bannerCard.className = "banner-option";
 
+        if (players[selectedPlayerIndex]?.banner === banner.id) {
+            bannerCard.classList.add("is-selected");
+        }
+
         bannerCard.dataset.bannerId = banner.id;
 
 
@@ -333,8 +338,6 @@ function renderBannerSelector() {
 ========================================= */
 
 bannerGrid.addEventListener("click", (event) => {
-
-    if (savedRosterActive) return;
 
     const bannerOption =
         event.target.closest(".banner-option");
@@ -376,6 +379,7 @@ players[selectedPlayerIndex].theme =
 
 
     bannerSelector.classList.remove("active");
+    openPlayerModal(selectedPlayerIndex);
 
 });
 
@@ -446,8 +450,6 @@ function updateSelectedPlayerBanner() {
 ========================================= */
 
 changeBannerButton.addEventListener("click", () => {
-
-    if (savedRosterActive) return;
 
     renderBannerSelector();
 
@@ -552,6 +554,43 @@ const BANNERS = [
     }
 
 ];
+
+const DEFAULT_SAVED_BANNERS = {
+    cafe: "cafe",
+    masa: "masa",
+    meilin: "meilin",
+    richard: "richard",
+    myles: "myles",
+    chato: "chato",
+    kevo: "evan",
+    raquel: "raquel"
+};
+
+let savedRosterBannersUpdated = false;
+const shouldApplyDefaultSavedBanners = localStorage.getItem(SAVED_ROSTER_BANNERS_VERSION_KEY) !== "1";
+savedRoster = savedRoster.map(player => {
+    const expectedBannerId = DEFAULT_SAVED_BANNERS[player.name.trim().toLowerCase()];
+    const banner = (shouldApplyDefaultSavedBanners && expectedBannerId
+        ? BANNERS.find(item => item.id === expectedBannerId)
+        : BANNERS.find(item => item.id === player.banner))
+        || BANNERS.find(item => item.id === expectedBannerId);
+
+    if (banner && (player.banner !== banner.id || player.theme !== banner.theme)) {
+        savedRosterBannersUpdated = true;
+        return { ...player, banner: banner.id, theme: banner.theme };
+    }
+    return player;
+});
+
+if (savedRosterBannersUpdated) {
+    writeStoredJSON(SAVED_PLAYERS_STORAGE_KEY, savedRoster);
+    if (savedRosterActive) {
+        players = copyPlayerCollection(savedRoster);
+        writeStoredJSON(PLAYERS_STORAGE_KEY, players);
+    }
+}
+localStorage.setItem(SAVED_ROSTER_BANNERS_VERSION_KEY, "1");
+
 /* =========================================
    CARGAR DESDE LOCALSTORAGE
 ========================================= */
@@ -609,6 +648,9 @@ function savePlayers() {
     if (!savedRosterActive) {
         customRoster = copyPlayerCollection(players);
         writeStoredJSON(CUSTOM_PLAYERS_STORAGE_KEY, customRoster);
+    } else {
+        savedRoster = copyPlayerCollection(players);
+        writeStoredJSON(SAVED_PLAYERS_STORAGE_KEY, savedRoster);
     }
     document.dispatchEvent(new CustomEvent("players:changed"));
     return persisted;
@@ -629,7 +671,7 @@ function syncSavedRosterControls() {
     const deletePlayerButton = document.getElementById("deletePlayerButton");
     if (editProfileButton) editProfileButton.hidden = savedRosterActive;
     if (deletePlayerButton) deletePlayerButton.hidden = savedRosterActive;
-    if (changeBannerButton) changeBannerButton.hidden = savedRosterActive;
+    if (changeBannerButton) changeBannerButton.hidden = false;
 }
 
 function toggleSavedRoster() {
@@ -749,11 +791,13 @@ function renderPlayers() {
 
         const playerCard =
             document.createElement("div");
+        const playerBanner = getPlayerBanner(player);
 
 
         playerCard.classList.add(
             "player-card"
         );
+        playerCard.dataset.bannerTheme = player.theme || "blue";
 
 
         playerCard.innerHTML = `
@@ -761,6 +805,10 @@ function renderPlayers() {
             <div class="player-number">
                 ${index + 1}
             </div>
+
+            ${playerBanner
+                ? `<img class="player-card-banner" src="${escapeHTML(playerBanner.image)}" alt="Banner de ${escapeHTML(player.name)}" loading="lazy">`
+                : `<div class="player-card-banner-placeholder" aria-hidden="true">?</div>`}
 
             <div class="player-info">
 
