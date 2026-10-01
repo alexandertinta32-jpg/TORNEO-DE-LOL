@@ -3848,6 +3848,9 @@ body[class*="bracket-theme-"] {
 }
 body[class*="bracket-theme-"] .header { border-bottom-color: var(--bracket-theme-primary); box-shadow: 0 0 24px color-mix(in srgb, var(--bracket-theme-primary) 28%, transparent); }
 body[class*="bracket-theme-"] .logo strong, body[class*="bracket-theme-"] .section-header h2 { color: var(--bracket-theme-accent); }
+body[class*="bracket-theme-"] .hero-small { color: var(--bracket-theme-accent); }
+body[class*="bracket-theme-"] .tournament-mode { color: var(--bracket-theme-accent); animation: none; text-shadow: 0 0 8px color-mix(in srgb, var(--bracket-theme-accent) 64%, transparent), 0 0 22px color-mix(in srgb, var(--bracket-theme-primary) 48%, transparent); }
+body[class*="bracket-theme-"] .navigation button[aria-current="page"] { border-color: var(--bracket-theme-primary); background: color-mix(in srgb, var(--bracket-theme-primary) 16%, transparent); }
 body[class*="bracket-theme-"] .tournament-panel { border-color: color-mix(in srgb, var(--bracket-theme-primary) 48%, #37526b 52%); background: linear-gradient(135deg, color-mix(in srgb, var(--bracket-theme-primary) 14%, #0d2036 86%), #05101ef2); }
 body[class*="bracket-theme-"] .module-tab.is-active { border-color: var(--bracket-theme-primary); box-shadow: inset 0 -2px var(--bracket-theme-accent); }
 body.bracket-theme-cafe { --bracket-theme-primary: #c62828; --bracket-theme-accent: #ff4b4b; }
