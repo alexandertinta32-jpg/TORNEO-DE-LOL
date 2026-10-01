@@ -50,33 +50,30 @@ function registerModulePlacements(module, byId) {
         ? match.playerIds.find(id => id !== match.winnerId) : null;
 
     const final = main.find(match => match.id.endsWith("-final-1"));
-    if (final?.winnerId) {
+    const revenge = main.find(match => match.id.endsWith("-revanch-1"));
+    if (revenge?.winnerId) {
+        lowerPlacement(rowFor(revenge.winnerId), STANDING_PLACEMENT.champion);
+        lowerPlacement(rowFor(loserOf(revenge)), STANDING_PLACEMENT.runnerUp);
+    } else if (!revenge && final?.winnerId) {
+        // Compatibilidad con estados guardados antes de añadir la revancha.
         lowerPlacement(rowFor(final.winnerId), STANDING_PLACEMENT.champion);
         lowerPlacement(rowFor(loserOf(final)), STANDING_PLACEMENT.runnerUp);
     }
-    const semis = main.filter(match => match.id.includes("-semi-"));
-    const third = main.find(match => match.id.endsWith("-third-1"));
-    if (third?.winnerId) {
-        lowerPlacement(rowFor(third.winnerId), STANDING_PLACEMENT.thirdPlace);
-        lowerPlacement(rowFor(loserOf(third)), STANDING_PLACEMENT.fourthPlace);
-    } else {
-        semis.forEach(match => {
-            const loser = loserOf(match);
-            if (loser) lowerPlacement(rowFor(loser), STANDING_PLACEMENT.thirdPlace);
-        });
-    }
+    // La derrota en la final principal deja el tercer puesto; la derrota del
+    // Infierno deja el cuarto. Ambos se muestran como tarjetas de posición.
+    if (final?.winnerId) lowerPlacement(rowFor(loserOf(final)), STANDING_PLACEMENT.thirdPlace);
     main.filter(match => match.id.includes("-match-"))
         .forEach(match => {
             const loser = loserOf(match);
             if (loser) lowerPlacement(rowFor(loser), STANDING_PLACEMENT.quarterfinalist);
         });
 
-    const loserFinal = loser.find(match => match.id.endsWith("-loser-3"));
+    const loserFinal = loser.find(match => match.id.endsWith("-loser-5"));
     if (loserFinal?.winnerId) {
         lowerPlacement(rowFor(loserFinal.winnerId), STANDING_PLACEMENT.loserBracketWinner);
-        lowerPlacement(rowFor(loserOf(loserFinal)), STANDING_PLACEMENT.loserBracketRunnerUp);
+        lowerPlacement(rowFor(loserOf(loserFinal)), STANDING_PLACEMENT.fourthPlace);
     }
-    loser.filter(match => match.id.endsWith("-loser-1") || match.id.endsWith("-loser-2"))
+    loser.filter(match => match.id.endsWith("-loser-3") || match.id.endsWith("-loser-4"))
         .forEach(match => {
             const loserId = loserOf(match);
             if (loserId) lowerPlacement(rowFor(loserId), STANDING_PLACEMENT.loserBracketSemifinalist);

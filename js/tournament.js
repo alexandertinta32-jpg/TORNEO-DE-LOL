@@ -79,7 +79,10 @@ function normalizeTournamentState(saved) {
         const used = new Set();
         next.modules[definition.id].created = source.created === true;
         const matchLimit = definition.enabled ? 8 : MAX_PLAYERS / 2;
-        next.modules[definition.id].matches = source.matches.slice(0, matchLimit).map((match, index) => {
+        // El tercer puesto ya no es una partida aparte: se deriva del perdedor
+        // de la final principal en la composición de doble llave.
+        const sourceMatches = source.matches.filter(match => !match?.id?.endsWith("-third-1"));
+        next.modules[definition.id].matches = sourceMatches.slice(0, matchLimit).map((match, index) => {
             const playerIds = [0, 1].map(slot => {
                 const id = match?.playerIds?.[slot];
                 if (match?.derived === true) return ids.has(id) ? id : null;
@@ -97,20 +100,20 @@ function normalizeTournamentState(saved) {
                 module.matches.push({ id: `${definition.id}-match-${module.matches.length + 1}`, playerIds: [null, null], winnerId: null, derived: false });
             }
             if (definition.enabled) {
-                const requiredDerived = ["semi-1", "semi-2", "third-1", "final-1"];
+                const requiredDerived = ["semi-1", "semi-2", "final-1", "revanch-1"];
                 requiredDerived.forEach(suffix => {
                     if (!module.matches.some(match => match.id === `${definition.id}-${suffix}`)) {
                         module.matches.push({ id: `${definition.id}-${suffix}`, playerIds: [null, null], winnerId: null, derived: true });
                     }
                 });
                 const loserSource = Array.isArray(source.loserMatches) ? source.loserMatches : [];
-                module.loserMatches = loserSource.slice(0, 3).map((match, index) => ({
+                module.loserMatches = loserSource.slice(0, 5).map((match, index) => ({
                     id: match?.id || `${definition.id}-loser-${index + 1}`,
                     playerIds: [0, 1].map(slot => ids.has(match?.playerIds?.[slot]) ? match.playerIds[slot] : null),
                     winnerId: ids.has(match?.winnerId) ? match.winnerId : null,
                     derived: true
                 }));
-                while (module.loserMatches.length < 3) {
+                while (module.loserMatches.length < 5) {
                     module.loserMatches.push({ id: `${definition.id}-loser-${module.loserMatches.length + 1}`, playerIds: [null, null], winnerId: null, derived: true });
                 }
             }

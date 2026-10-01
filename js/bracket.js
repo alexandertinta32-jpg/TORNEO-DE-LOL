@@ -22,10 +22,10 @@ function createModuleMatches(moduleId) {
         next.modules[moduleId].matches.push(
             { id: `${moduleId}-semi-1`, playerIds: [null, null], winnerId: null, derived: true },
             { id: `${moduleId}-semi-2`, playerIds: [null, null], winnerId: null, derived: true },
-            { id: `${moduleId}-third-1`, playerIds: [null, null], winnerId: null, derived: true },
-            { id: `${moduleId}-final-1`, playerIds: [null, null], winnerId: null, derived: true }
+            { id: `${moduleId}-final-1`, playerIds: [null, null], winnerId: null, derived: true },
+            { id: `${moduleId}-revanch-1`, playerIds: [null, null], winnerId: null, derived: true }
         );
-        next.modules[moduleId].loserMatches = Array.from({ length: 3 }, (_, index) => ({
+        next.modules[moduleId].loserMatches = Array.from({ length: 5 }, (_, index) => ({
             id: `${moduleId}-loser-${index + 1}`, playerIds: [null, null], winnerId: null, derived: true
         }));
     }
@@ -45,22 +45,28 @@ function syncBracketProgression(state) {
     };
     for (const definition of TOURNAMENT_MODULES.filter(item => item.enabled)) {
         const module = state?.modules?.[definition.id];
-        if (!module?.created || module.loserMatches.length < 3) continue;
+        if (!module?.created || module.loserMatches.length < 5) continue;
         const quarter = module.matches.filter(match => match.id.includes("-match-")).slice(0, 4);
         const semiOne = module.matches.find(match => match.id === `${definition.id}-semi-1`);
         const semiTwo = module.matches.find(match => match.id === `${definition.id}-semi-2`);
-        const third = module.matches.find(match => match.id === `${definition.id}-third-1`);
         const final = module.matches.find(match => match.id === `${definition.id}-final-1`);
-        if (quarter.length < 4 || !semiOne || !semiTwo || !third || !final) continue;
+        const revenge = module.matches.find(match => match.id === `${definition.id}-revanch-1`);
+        if (quarter.length < 4 || !semiOne || !semiTwo || !final) continue;
         update(semiOne, [quarter[0].winnerId, quarter[1].winnerId]);
         update(semiTwo, [quarter[2].winnerId, quarter[3].winnerId]);
         const loserOf = match => match?.winnerId && match.playerIds?.every(Boolean)
             ? match.playerIds.find(id => id !== match.winnerId) : null;
-        update(third, [loserOf(semiOne), loserOf(semiTwo)]);
         update(final, [semiOne.winnerId, semiTwo.winnerId]);
         update(module.loserMatches[0], [loserOf(quarter[0]), loserOf(quarter[1])]);
         update(module.loserMatches[1], [loserOf(quarter[2]), loserOf(quarter[3])]);
-        update(module.loserMatches[2], [module.loserMatches[0].winnerId, module.loserMatches[1].winnerId]);
+        // Primera ronda del Infierno: perdedores de cuartos.
+        // Semifinales del Infierno: ganadores de esa ronda contra los
+        // eliminados de las semifinales principales.
+        update(module.loserMatches[2], [module.loserMatches[0].winnerId, loserOf(semiOne)]);
+        update(module.loserMatches[3], [module.loserMatches[1].winnerId, loserOf(semiTwo)]);
+        update(module.loserMatches[4], [module.loserMatches[2].winnerId, module.loserMatches[3].winnerId]);
+        // La revancha enfrenta al ganador del cuadro principal con el ganador del Infierno.
+        update(revenge, [final.winnerId, module.loserMatches[4].winnerId]);
     }
     return changed;
 }
@@ -150,6 +156,7 @@ function treeMatchMarkup(match, index, used) {
     const stageLabel = match.id.includes("-semi-")
         ? `SEMIFINAL ${match.id.endsWith("2") ? "02" : "01"}`
         : match.id.includes("-third-") ? "TERCER PUESTO"
+        : match.id.includes("-revanch-") ? "FINAL (REVANCHA)"
         : match.id.includes("-final-") ? "FINAL"
         : match.id.includes("-loser-") ? `INFIERNO ${String(Number(match.id.split("-").pop())).padStart(2, "0")}`
         : `CUARTOS DE FINAL ${String(index + 1).padStart(2, "0")}`;
@@ -176,27 +183,49 @@ function championMarkup(module) {
     </button></div>`;
 }
 
+function placementCardMarkup(rank, playerId, description, champion = false) {
+    const player = getPlayerById(playerId);
+    const banner = getPlayerBanner(player);
+    const label = player?.name || "A CONFIRMAR";
+    const buttonAttrs = champion && player
+        ? `data-bracket-champion="${escapeHTML(player.id)}" aria-label="Abrir perfil de ${escapeHTML(player.name)}, campeón"`
+        : "disabled";
+    return `<div class="placement-card placement-${rank.replace("º", "").replace("°", "")}">
+        <span class="placement-rank">${rank}</span>
+        <button type="button" class="placement-player" ${buttonAttrs}>
+            <span class="placement-art">${banner ? `<img src="${banner.image}" alt="" loading="lazy">` : ""}<i></i></span>
+            <span class="placement-info"><strong>${escapeHTML(label)}</strong><small>${escapeHTML(description)}</small></span>
+        </button>
+    </div>`;
+}
+
 function bracketTreeMarkup(module) {
     const used = new Set(module.matches.filter(match => !match.derived).flatMap(match => match.playerIds).filter(Boolean));
     const quarters = module.matches.filter(match => match.id.includes("-match-")).slice(0, 4);
     const semiOne = module.matches.find(match => match.id.endsWith("-semi-1"));
     const semiTwo = module.matches.find(match => match.id.endsWith("-semi-2"));
-    const third = module.matches.find(match => match.id.endsWith("-third-1"));
     const final = module.matches.find(match => match.id.endsWith("-final-1"));
+    const revenge = module.matches.find(match => match.id.endsWith("-revanch-1"));
+    const loserOf = match => match?.winnerId && match.playerIds?.every(Boolean)
+        ? match.playerIds.find(id => id !== match.winnerId) : null;
+    const hellFinal = module.loserMatches?.find(match => match.id.endsWith("-loser-5"));
+    const first = revenge?.winnerId || null;
+    const second = loserOf(revenge);
+    const third = loserOf(final);
+    const fourth = loserOf(hellFinal);
     const connector = (column, row, span, path, height, resolved) => `<svg class="flow-connector ${resolved ? "is-resolved" : ""}" style="grid-column:${column};grid-row:${row} / span ${span}" viewBox="0 0 100 ${height}" preserveAspectRatio="none" aria-hidden="true"><path d="${path}" /></svg>`;
-    return `<section class="bracket-flow" aria-label="Cuadro principal: de cuartos de final al campeón">
-        <p class="flow-help">Marca la victoria en cada cruce. En semifinales y en la final, elige el banner del ganador.</p>
-        <div class="flow-scroll" role="region" aria-label="Cuadro principal desplazable" tabindex="0">
-            <div class="flow-board">
+    return `<section class="bracket-composition" aria-label="Bracket principal con final de revancha">
+        <p class="composition-help">Marca la victoria en cada cruce. En semifinales, la final principal y la revancha, elige el banner del ganador; los perdedores de cuartos pasan al bracket del Infierno.</p>
+        <div class="composition-scroll" role="region" aria-label="Bracket principal desplazable" tabindex="0">
+            <div class="flow-board composition-flow-board">
                 <span class="flow-round" style="grid-column:1"><small>01 / CRUCES</small>CUARTOS DE FINAL</span>
                 <span class="flow-round" style="grid-column:3"><small>02 / TOP 4</small>SEMIFINALES</span>
-                <span class="flow-round" style="grid-column:5"><small>03 / TOP 2</small>FINAL</span>
-                <span class="flow-round flow-round-champion" style="grid-column:7"><small>04 / GANADOR</small>CAMPEÓN</span>
-                ${Array.from({ length: 4 }, (_, index) => {
-                    const match = quarters[index];
+                <span class="flow-round" style="grid-column:5"><small>03 / TOP 2</small>FINAL DEL BRACKET PRINCIPAL</span>
+                <span class="flow-round flow-round-champion" style="grid-column:7"><small>04 / ÚLTIMA OPORTUNIDAD</small>FINAL (REVANCHA)</span>
+                ${quarters.map((match, index) => {
                     const semifinal = index < 2 ? semiOne : semiTwo;
                     const row = 2 + index * 2;
-                    return `<div class="flow-quarter" style="grid-column:1;grid-row:${row} / span 2">${match ? treeMatchMarkup(match, index, used) : `<div class="flow-empty-match"><span class="tree-match-label">CUARTOS DE FINAL ${String(index + 1).padStart(2, "0")}</span><strong>CRUCE PENDIENTE</strong></div>`}</div>
+                    return `<div class="flow-quarter" style="grid-column:1;grid-row:${row} / span 2">${treeMatchMarkup(match, index, used)}</div>
                         ${connector(2, row, 2, "M0 60 H42 V116 H0 M42 88 H100", 176, match?.winnerId)}
                         <div class="flow-node" style="grid-column:3;grid-row:${row} / span 2">${flowBannerMarkup(match?.winnerId, semifinal, `Ganador de cuartos ${String(index + 1).padStart(2, "0")}`, "SEMIFINAL")}</div>`;
                 }).join("")}
@@ -205,12 +234,18 @@ function bracketTreeMarkup(module) {
                     return `${connector(4, row, 4, "M0 88 H48 V264 H0 M48 176 H100", 352, match?.winnerId)}
                         <div class="flow-node flow-finalist" style="grid-column:5;grid-row:${row} / span 4">${flowBannerMarkup(match?.winnerId, final, `Ganador de semifinal ${index + 1}`, "FINAL")}${match?.winnerId ? `<button type="button" class="text-button flow-undo" data-clear="${match.id}" aria-label="Deshacer resultado de semifinal ${index + 1}">Deshacer semifinal ${index + 1}</button>` : ""}</div>`;
                 }).join("")}
-                ${connector(6, 2, 8, "M0 176 H48 V528 H0 M48 352 H100", 704, final?.winnerId)}
-                <div class="flow-node flow-champion" style="grid-column:7;grid-row:2 / span 8">${flowBannerMarkup(final?.winnerId, null, "Campeón por definir", "CAMPEÓN")}${final?.winnerId ? `<button type="button" class="text-button flow-undo" data-clear="${final.id}">Deshacer final</button>` : ""}</div>
+                ${connector(6, 2, 8, "M0 176 H48 V528 H0 M48 352 H100", 704, final?.winnerId && hellFinal?.winnerId)}
+                <div class="flow-node composition-revenge-main" style="grid-column:7;grid-row:2 / span 4">${flowBannerMarkup(final?.winnerId, revenge, "Ganador de la final principal", "REVANCHA")}</div>
+                <div class="flow-node composition-revenge-hell" style="grid-column:7;grid-row:6 / span 4">${flowBannerMarkup(hellFinal?.winnerId, revenge, "Ganador del Infierno", "REVANCHA")}</div>
             </div>
         </div>
-        <p class="flow-scroll-hint">Desliza el cuadro para ver el camino hasta el campeón →</p>
-        ${third ? `<div class="flow-third"><div><span class="eyebrow">PODIO DEL MÓDULO</span><p>Los dos perdedores de semifinales disputan el tercer puesto.</p></div>${treeMatchMarkup(third, 7, used)}</div>` : ""}
+        <p class="composition-scroll-hint">Desliza horizontalmente para ver todas las rondas →</p>
+        <div class="placement-strip" aria-label="Posiciones finales del módulo">
+            ${placementCardMarkup("1º", first, "CAMPEÓN", true)}
+            ${placementCardMarkup("2º", second, "FINAL DE REVANCHA")}
+            ${placementCardMarkup("3º", third, "PERDEDOR DE LA FINAL PRINCIPAL")}
+            ${placementCardMarkup("4º", fourth, "PERDEDOR DEL INFIERNO")}
+        </div>
     </section>`;
 }
 
@@ -221,7 +256,7 @@ function flowBannerMarkup(playerId, nextMatch, pendingLabel, stage) {
     const winner = Boolean(player && nextMatch?.winnerId === player.id);
     const champion = stage === "CAMPEÓN";
     const status = champion ? (player ? "VER PERFIL" : "ESPERANDO LA FINAL")
-        : !player ? "POR DEFINIR" : winner ? (stage === "FINAL" ? "✓ CAMPEÓN" : "✓ FINALISTA")
+        : !player ? "POR DEFINIR" : winner ? (stage === "REVANCHA" ? "✓ CAMPEÓN" : stage === "FINAL" ? "✓ AVANZA A REVANCHA" : "✓ FINALISTA")
         : nextMatch?.winnerId ? "DERROTA" : ready ? `ELEGIR EN ${stage}` : "ESPERANDO RIVAL";
     return `<button type="button" class="flow-banner ${player ? "" : "is-pending"} ${winner ? "is-winner" : ""} ${champion && player ? "is-champion" : ""}"
         ${champion ? `data-bracket-champion="${escapeHTML(playerId || "")}" aria-label="${player ? `Abrir perfil de ${escapeHTML(player.name)}, campeón` : pendingLabel}"`
@@ -234,19 +269,32 @@ function flowBannerMarkup(playerId, nextMatch, pendingLabel, stage) {
 
 function loserBracketMarkup(module) {
     if (!module.loserMatches?.length) return "";
-    const used = new Set(module.loserMatches.flatMap(match => match.playerIds).filter(Boolean));
-    const entry = (playerId, label) => {
-        const player = getPlayerById(playerId);
-        const banner = getPlayerBanner(player);
-        return `<div class="hell-entry"><span>${label}</span><div class="hell-entry-player">${banner ? `<img src="${banner.image}" alt="" loading="lazy">` : ""}<i></i><strong>${escapeHTML(player?.name || "A CONFIRMAR")}</strong></div></div>`;
-    };
-    return `<section class="loser-bracket" aria-labelledby="loserBracketTitle">
-        <div class="loser-bracket-heading"><div><span class="eyebrow">SEGUNDA OPORTUNIDAD</span><h3 id="loserBracketTitle">BRACKET DEL INFIERNO</h3><p>Solo los cuatro jugadores que pierden en cuartos entran aquí: dos semifinales y una final.</p></div><span class="status-pill">4 ELIMINADOS · 3 PARTIDAS</span></div>
-        <div class="hell-layout">
-            <div class="hell-side hell-side-left">${entry(module.loserMatches[0].playerIds[0], "ELIMINADO 1")}${entry(module.loserMatches[1].playerIds[0], "ELIMINADO 2")}</div>
-            <div class="hell-center"><div class="hell-semifinals"><div><span class="hell-round-label">SEMIFINAL</span>${treeMatchMarkup(module.loserMatches[0], 0, used)}</div><div><span class="hell-round-label">SEMIFINAL</span>${treeMatchMarkup(module.loserMatches[1], 1, used)}</div></div><span class="hell-round-label hell-final-label">FINAL</span>${treeMatchMarkup(module.loserMatches[2], 2, used)}</div>
-            <div class="hell-side hell-side-right">${entry(module.loserMatches[0].playerIds[1], "ELIMINADO 3")}${entry(module.loserMatches[1].playerIds[1], "ELIMINADO 4")}</div>
+    const first = module.loserMatches[0];
+    const second = module.loserMatches[1];
+    const semiOne = module.loserMatches[2];
+    const semiTwo = module.loserMatches[3];
+    const final = module.loserMatches[4];
+    const entry = (match, slot, label, column, row) => `<div class="hell-flow-node" style="grid-column:${column};grid-row:${row} / span 2"><span class="hell-flow-label">${label}</span>${flowBannerMarkup(match?.playerIds?.[slot], match, label, "INFIERNO")}</div>`;
+    return `<section class="loser-bracket hell-composition" aria-labelledby="loserBracketTitle">
+        <div class="loser-bracket-heading"><div><span class="eyebrow">SEGUNDA OPORTUNIDAD</span><h3 id="loserBracketTitle">BRACKET DEL INFIERNO</h3><p>Los perdedores de cuartos abren la llave; quienes caen en semifinales principales entran en la ronda siguiente. El campeón del Infierno sube a la final de revancha.</p></div><span class="status-pill">5 CRUCES</span></div>
+        <div class="hell-flow-scroll" role="region" aria-label="Bracket del Infierno desplazable" tabindex="0">
+            <div class="hell-flow-board">
+                <span class="hell-flow-heading" style="grid-column:1"><small>01 / ENTRADA</small>PRIMERA RONDA</span>
+                <span class="hell-flow-heading" style="grid-column:3"><small>02 / SUPERVIVIENTES</small>SEMIFINALES</span>
+                <span class="hell-flow-heading" style="grid-column:5"><small>03 / ÚLTIMO CRUCE</small>FINAL DEL INFIERNO</span>
+                ${entry(first, 0, "PERDEDOR DE CUARTOS 01", 1, 2)}
+                ${entry(first, 1, "PERDEDOR DE CUARTOS 02", 1, 4)}
+                ${entry(second, 0, "PERDEDOR DE CUARTOS 03", 1, 6)}
+                ${entry(second, 1, "PERDEDOR DE CUARTOS 04", 1, 8)}
+                ${entry(semiOne, 0, "SEMIFINAL DEL INFIERNO 01", 3, 3)}
+                ${entry(semiOne, 1, "PERDEDOR DE SEMIFINAL 01", 3, 5)}
+                ${entry(semiTwo, 0, "SEMIFINAL DEL INFIERNO 02", 3, 7)}
+                ${entry(semiTwo, 1, "PERDEDOR DE SEMIFINAL 02", 3, 9)}
+                <svg class="hell-flow-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M21 18 H29 V28 H39"/><path d="M21 38 H29 V28 H39"/><path d="M21 60 H29 V72 H39"/><path d="M21 80 H29 V72 H39"/><path d="M59 35 H68 V50 H78"/><path d="M59 77 H68 V50 H78"/></svg>
+                <div class="hell-flow-final hell-flow-node" style="grid-column:5;grid-row:4 / span 6"><span class="hell-flow-label">FINAL DEL INFIERNO</span><div class="hell-final-players">${flowBannerMarkup(final?.playerIds?.[0], final, "Ganador del Infierno 01", "INFIERNO")}${flowBannerMarkup(final?.playerIds?.[1], final, "Ganador del Infierno 02", "INFIERNO")}</div></div>
+            </div>
         </div>
+        <p class="hell-flow-hint">El ganador aparece después en la final de revancha del bracket principal →</p>
     </section>`;
 }
 

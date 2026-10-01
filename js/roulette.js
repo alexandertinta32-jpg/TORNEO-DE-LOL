@@ -34,7 +34,10 @@ function initializeRoulette() {
     document.querySelector(".roulette-result-label").textContent = last ? "SELECCIONADO" : "ESPERANDO SORTEO";
     rouletteResultName.textContent = last?.name || "—";
     updateRouletteButton();
-    if (roulettePlayers.length === MAX_PLAYERS && rouletteSelected.length === roulettePlayers.length) showRouletteBannerReveal();
+    // No abrir el resumen ni intentar audio al cargar otra sección. El resumen
+    // solo aparece al terminar un sorteo mientras la Ruleta está visible.
+    if (roulettePlayers.length === MAX_PLAYERS && rouletteSelected.length === roulettePlayers.length
+        && document.getElementById("roulette")?.classList.contains("active")) showRouletteBannerReveal();
 }
 
 function stopRouletteRevealAudio() {
@@ -82,7 +85,11 @@ function showRouletteBannerReveal() {
     rouletteRevealAudio = new Audio("assets/sounds/EEG.mp3");
     rouletteRevealAudio.loop = true;
     rouletteRevealAudio.volume = .45;
-    rouletteRevealAudio.play().catch(() => announce("Pulsa CONTINUAR o interactúa con la página para iniciar la música del sorteo.", true));
+    rouletteRevealAudio.play().catch(() => {
+        // El bloqueo de reproducción automática no es un error del torneo y no
+        // debe mostrar una alerta roja al entrar a la página.
+        overlay.dataset.audioBlocked = "true";
+    });
 }
 
 function renderRouletteWheel() {
