@@ -12,12 +12,13 @@ Abre `index.html` con Live Server. La vista local de desarrollo usada durante es
 - `css/style.css` conserva el tema gaming existente y añade los componentes de torneo y sus breakpoints responsive.
 - `js/players.js` mantiene jugadores, perfiles, banners y `torneoLOL_players`.
 - `js/tournament.js` es la fuente común del estado del torneo (`torneoLOL_tournament_v1`), normaliza datos antiguos y coordina eventos.
-- `js/bracket.js` gestiona tres módulos, cruces editables y ganadores corregibles. Cada módulo enlaza cuartos, semifinales, final, revancha y un bracket del Infierno de cinco cruces: dos entradas desde cuartos, dos semifinales con los perdedores de la llave principal y una final; `MÓDULO EXTRA` queda como placeholder.
+- `js/bracket.js` gestiona dos módulos 1VS1 con cruces editables y un tercer módulo 2VS2 por equipos. El módulo 3 permite formar cuatro parejas, resolver sus semifinales, final principal, bracket del Infierno y revancha.
 - El cuadro principal de los tres módulos usa una composición de doble llave: cuartos, semifinales, final del bracket principal, final de revancha contra el ganador del Infierno y tarjetas de posiciones 1.º–4.º. Los perdedores de cuartos alimentan el bracket del Infierno; el ganador de la revancha es campeón, el otro queda segundo, el perdedor de la final principal queda tercero y el perdedor del Infierno queda cuarto. En pantallas pequeñas, el cuadro permite desplazamiento horizontal.
 - `js/standings.js` deriva PJ, PG, PP y puntos de los resultados vigentes; no acumula contadores, por lo que corregir un ganador no duplica estadísticas.
 - `js/roulette.js` dibuja nombres desde los jugadores y guarda solamente el historial del sorteo. Al completar ocho selecciones muestra los ocho banners en orden, reproduce `assets/sounds/EEG.mp3` y permite cerrar la pantalla con CONTINUAR. No modifica el bracket automáticamente.
 - `data/champions.js` contiene el catálogo local de 173 campeones de Data Dragon 16.19.1 (`es_MX`), sin descargar imágenes.
-- `js/randomizer.js` admite sorteo individual por jugador y modo 1VS1. En individual, cada giro se guarda en el apartado del participante activo hasta un máximo de tres campeones, sin repetir dentro de su lista; cada posición comparte su categoría entre todos los jugadores para equilibrar las opciones. El botón de reinicio borra listas y categorías del randomizer; en 1VS1 selecciona una categoría compartida.
+- `js/randomizer.js` admite sorteo individual por jugador y modo 1VS1, mostrando los iconos locales de Riot durante la animación y el resultado. En individual, cada giro se guarda en el apartado del participante activo hasta un máximo de tres campeones, sin repetir dentro de su lista; cada posición comparte su categoría entre todos los jugadores para equilibrar las opciones. El botón de reinicio borra listas y categorías del randomizer; en 1VS1 selecciona una categoría compartida.
+- `js/trophies.js` guarda estadísticas editables de minions, kills y torretas, muestra rankings separados, posiciones del módulo 3 y permite cargar clips en el almacenamiento local del navegador mediante IndexedDB.
 
 ## Reglas provisionales
 

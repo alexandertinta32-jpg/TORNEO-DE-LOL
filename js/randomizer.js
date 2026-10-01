@@ -123,7 +123,7 @@ function singleResultMarkup(state, player) {
     const picks = player ? playerChampionList(state, player.id) : [];
     const latest = picks[picks.length - 1] || "";
     return `<article class="random-champion-card random-champion-card-single"><span class="eyebrow">RANDOMIZER · ${escapeHTML(player?.name || "PARTICIPANTE")}</span>
-        <div class="champion-media" aria-hidden="true"><span>${latest ? escapeHTML(latest.slice(0, 2).toUpperCase()) : "?"}</span></div>
+        <div class="champion-media" aria-hidden="true">${latest && CHAMPION_IMAGES[latest] ? `<img src="${CHAMPION_IMAGES[latest]}" alt="${escapeHTML(latest)}">` : `<span>${latest ? escapeHTML(latest.slice(0, 2).toUpperCase()) : "?"}</span>`}</div>
         <span class="eyebrow">ÚLTIMO CAMPEÓN AÑADIDO</span><strong class="champion-result">${escapeHTML(latest || "POR REVELAR")}</strong>
         <span class="champion-role">${latest ? escapeHTML(getChampionRole(latest).toUpperCase()) : "ROL EMPAREJADO"}</span></article>`;
 }
@@ -137,7 +137,7 @@ function renderRandomizer() {
         button.disabled = randomizerRunning;
     });
     if (state.mode === "single") {
-        const player = getPlayerById(randomizerPlayerPanel?.dataset.activePlayer) || activeRandomizerPlayer(state);
+        const player = activeRandomizerPlayer(state);
         const picks = player ? playerChampionList(state, player.id) : [];
         renderPlayerPanel(state);
         randomizerResults.classList.remove("is-duel");
@@ -158,7 +158,7 @@ function renderRandomizer() {
         return `${index ? '<span class="random-versus" aria-hidden="true">VS</span>' : ""}<article class="random-champion-card"><label for="random-player-${index}" class="eyebrow">JUGADOR ${index + 1}</label>
             <select id="random-player-${index}" data-random-player="${index}" ${randomizerRunning ? "disabled" : ""}><option value="">Jugador ${index + 1}</option>
                 ${getPlayers().map(option => `<option value="${escapeHTML(option.id)}" ${option.id === playerId ? "selected" : ""} ${state.playerIds[1 - index] === option.id ? "disabled" : ""}>${escapeHTML(option.name)}</option>`).join("")}</select>
-            <div class="champion-media" aria-hidden="true"><span>?</span></div><span class="eyebrow">CAMPEÓN SELECCIONADO</span>
+            <div class="champion-media" aria-hidden="true">${state.champions[index] && CHAMPION_IMAGES[state.champions[index]] ? `<img src="${CHAMPION_IMAGES[state.champions[index]]}" alt="${escapeHTML(state.champions[index])}">` : "<span>?</span>"}</div><span class="eyebrow">CAMPEÓN SELECCIONADO</span>
             <strong class="champion-result">${escapeHTML(state.champions[index] || "POR REVELAR")}</strong><span class="champion-role">${state.champions[index] ? escapeHTML(getChampionRole(state.champions[index]).toUpperCase()) : "ROL EMPAREJADO"}</span></article>`;
     }).join("");
     randomizeButton.disabled = randomizerRunning;
@@ -176,7 +176,7 @@ function runRandomizer() {
     let activeId = null;
     let singleDraw = null;
     if (state.randomizer.mode === "single") {
-        const player = getPlayerById(randomizerPlayerPanel?.dataset.activePlayer) || activeRandomizerPlayer(state);
+        const player = activeRandomizerPlayer(state.randomizer);
         activeId = player?.id || null;
         const picks = activeId ? playerChampionList(state.randomizer, activeId) : [];
         if (!activeId || picks.length >= RANDOMIZER_PLAYER_LIMIT) return;
@@ -208,6 +208,12 @@ function runRandomizer() {
         }
         const temporary = count === 2 ? drawBalancedDuel() : drawChampions(1, CHAMPION_ROLE_POOLS[singleDraw?.role] || LOL_CHAMPIONS);
         randomizerResults.querySelectorAll(".champion-result").forEach((element, index) => { element.textContent = temporary[index]; });
+        randomizerResults.querySelectorAll(".champion-media").forEach((element, index) => {
+            const name = temporary[index] || "";
+            element.innerHTML = name && CHAMPION_IMAGES[name]
+                ? `<img src="${CHAMPION_IMAGES[name]}" alt="${escapeHTML(name)}">`
+                : `<span>${name ? escapeHTML(name.slice(0, 2).toUpperCase()) : "?"}</span>`;
+        });
         randomizerTimer = setTimeout(tick, 85);
     }
     tick();

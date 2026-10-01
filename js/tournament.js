@@ -12,8 +12,7 @@ const TOURNAMENT_CONFIG = Object.freeze({
 const TOURNAMENT_MODULES = Object.freeze([
     { id: "module-1", label: "MÓDULO 1", title: "PRIMER 1VS1", enabled: true },
     { id: "module-2", label: "MÓDULO 2", title: "SEGUNDO 1VS1", enabled: true },
-    { id: "module-3", label: "MÓDULO 3", title: "TERCER 1VS1", enabled: true },
-    { id: "extra", label: "EXTRA", title: "MÓDULO EXTRA", enabled: false }
+    { id: "module-3", label: "MÓDULO 3", title: "2 VS 2", enabled: true, teamMode: true }
 ]);
 
 function escapeHTML(value) {
@@ -59,10 +58,52 @@ function createTournamentState() {
         version: TOURNAMENT_CONFIG.version,
         participantIds: getPlayers().map(player => player.id),
         currentModule: TOURNAMENT_MODULES[0].id,
-        modules: Object.fromEntries(TOURNAMENT_MODULES.map(module => [module.id, { matches: [], loserMatches: [], created: false }])),
+        modules: Object.fromEntries(TOURNAMENT_MODULES.map(module => [module.id, module.teamMode
+            ? { matches: [], loserMatches: [], teams: createEmptyTeams(), created: false }
+            : { matches: [], loserMatches: [], created: false }])),
         roulette: { selectedIds: [], lastId: null, rotation: 0 },
         randomizer: { mode: "single", playerIds: [null, null], activePlayerId: null, champions: [], championsByPlayer: {}, slotRoles: [null, null, null] }
     };
+}
+
+function createEmptyTeams() {
+    return Array.from({ length: 4 }, (_, index) => ({
+        id: `module-3-team-${index + 1}`,
+        playerIds: [null, null]
+    }));
+}
+
+function normalizeTeamModule(source, ids) {
+    const empty = { matches: [], loserMatches: [], teams: createEmptyTeams(), created: false };
+    if (!source || typeof source !== "object") return empty;
+    const used = new Set();
+    const teams = createEmptyTeams().map((team, index) => {
+        const saved = Array.isArray(source.teams) ? source.teams[index] : null;
+        const playerIds = [0, 1].map(slot => {
+            const id = saved?.playerIds?.[slot];
+            if (!ids.has(id) || used.has(id)) return null;
+            used.add(id);
+            return id;
+        });
+        return { ...team, playerIds };
+    });
+    const teamIds = new Set(teams.map(team => team.id));
+    const normalizeMatch = (match, fallback, derived = false) => {
+        const sides = [0, 1].map(slot => teamIds.has(match?.teamIds?.[slot]) ? match.teamIds[slot] : null);
+        const winnerId = sides.every(Boolean) && sides.includes(match?.winnerId) ? match.winnerId : null;
+        return { id: match?.id || fallback, teamIds: sides, winnerId, derived: derived || match?.derived === true };
+    };
+    const sourceMatches = Array.isArray(source.matches) ? source.matches : [];
+    const sourceLoserMatches = Array.isArray(source.loserMatches) ? source.loserMatches : [];
+    const matches = ["match-1", "match-2", "final-1", "revanch-1"].map((suffix, index) => {
+        const saved = sourceMatches.find(match => match?.id === `module-3-${suffix}`) || sourceMatches[index];
+        return normalizeMatch(saved, `module-3-${suffix}`, index > 1);
+    });
+    const loserMatches = ["loser-1", "loser-2"].map((suffix, index) => {
+        const saved = sourceLoserMatches.find(match => match?.id === `module-3-${suffix}`) || sourceLoserMatches[index];
+        return normalizeMatch(saved, `module-3-${suffix}`, true);
+    });
+    return { matches, loserMatches, teams, created: source.created === true };
 }
 
 /* Normalizar al cargar y al cambiar participantes. No acumular estadísticas:
@@ -75,6 +116,10 @@ function normalizeTournamentState(saved) {
     for (const definition of TOURNAMENT_MODULES) {
         if (!definition.enabled) continue;
         const source = saved.modules?.[definition.id];
+        if (definition.teamMode) {
+            next.modules[definition.id] = normalizeTeamModule(source, ids);
+            continue;
+        }
         if (!source || !Array.isArray(source.matches)) continue;
         const used = new Set();
         next.modules[definition.id].created = source.created === true;
@@ -165,7 +210,7 @@ function getTournamentMatches(state = tournamentState) {
 
 function getModuleProgress(module) {
     const matches = [...(module?.matches || []), ...(module?.loserMatches || [])];
-    const playable = matches.filter(match => match.playerIds?.every(Boolean));
+    const playable = matches.filter(match => (match.playerIds || match.teamIds)?.every(Boolean));
     const completed = playable.filter(match => match.winnerId).length;
     return { total: playable.length, completed, complete: playable.length > 0 && completed === playable.length };
 }

@@ -15,7 +15,7 @@
 
     <link
         rel="stylesheet"
-        href="css/style.css?v=28"
+        href="css/style.css?v=31"
     >
 
 </head>
@@ -52,6 +52,10 @@
 
             <button data-section="standings">
                 Clasificación
+            </button>
+
+            <button data-section="trophies">
+                Trofeos
             </button>
 
             <button data-section="roulette">
@@ -481,6 +485,28 @@
         </section>
 
 
+        <section id="trophies" class="section">
+            <div class="section-header">
+                <p>RECONOCIMIENTOS DEL TORNEO</p>
+                <h2>TROFEOS</h2>
+            </div>
+            <div class="trophies-container tournament-panel">
+                <div class="tournament-toolbar">
+                    <div><span class="eyebrow">ESTADÍSTICAS INDIVIDUALES</span>
+                        <p class="muted">Registra manualmente los minions, kills y torretas de cada jugador.</p></div>
+                    <div class="trophy-toolbar-actions"><button id="resetTrophyStatsButton" class="danger-button" type="button">REINICIAR ESTADÍSTICAS</button><button id="saveTrophyStatsButton" class="primary-button" type="button">GUARDAR ESTADÍSTICAS</button></div>
+                </div>
+                <div id="trophyRankings" class="trophy-rankings"></div>
+                <div class="trophy-stats-scroll"><table class="trophy-stats-table"><thead><tr><th>JUGADOR</th><th>MINIONS</th><th>KILLS</th><th>TORRETAS</th></tr></thead><tbody id="trophyStatsBody"></tbody></table></div>
+                <div class="tournament-toolbar trophy-section-heading"><div><span class="eyebrow">CLASIFICACIÓN DEL MÓDULO 3</span><p class="muted">El 2 VS 2 se muestra por posiciones y no suma puntos a la tabla 1 VS 1.</p></div></div>
+                <div id="teamStandingBody" class="team-standing-list"></div>
+                <div class="tournament-toolbar trophy-section-heading"><div><span class="eyebrow">MEJORES JUGADAS</span><p class="muted">Puedes cargar clips desde tu computadora. Quedan guardados en este navegador para revisarlos después.</p></div></div>
+                <div class="clip-upload"><label for="clipPlayerSelect">JUGADOR DEL CLIP<select id="clipPlayerSelect"><option value="">Sin jugador asignado</option></select></label><label for="clipInput" class="clip-upload-button">SUBIR CLIPS<input id="clipInput" type="file" accept="video/*" multiple></label></div>
+                <div id="clipList" class="clip-list"><p class="empty-state">Todavía no hay clips cargados.</p></div>
+            </div>
+        </section>
+
+
 
         <!-- =====================================
              RANDOMIZER
@@ -871,7 +897,7 @@
 
 
         <p>
-            TORNEO LOL 1VS1 // LA GANGA
+            TORNEO LOL 1VS1 · 2VS2 // LA GANGA
         </p>
 
 
@@ -889,16 +915,19 @@
     ========================================== -->
 
     <script src="data/champions.js?v=21"></script>
-    <script src="js/tournament.js?v=21"></script>
+    <script src="data/champion-images.js?v=1"></script>
+    <script src="js/tournament.js?v=22"></script>
     <script src="js/players.js?v=21"></script>
 
-    <script src="js/bracket.js?v=25"></script>
+    <script src="js/bracket.js?v=27"></script>
 
     <script src="js/roulette.js?v=22"></script>
 
-    <script src="js/randomizer.js?v=24"></script>
+    <script src="js/randomizer.js?v=25"></script>
 
-    <script src="js/standings.js?v=21"></script>
+    <script src="js/standings.js?v=22"></script>
+
+    <script src="js/trophies.js?v=4"></script>
 
     <script src="js/app.js?v=21"></script>
 

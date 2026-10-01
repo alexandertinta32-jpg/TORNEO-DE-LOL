@@ -8,6 +8,20 @@ function createModuleMatches(moduleId) {
     if (!definition || roster.length < 2) return;
     const next = getTournamentState();
     if (next.modules[moduleId].created && !confirm("¿Volver a preparar los cruces de este módulo? Se borrarán solamente sus resultados.")) return;
+    if (definition.teamMode) {
+        next.modules[moduleId] = {
+            created: true,
+            teams: createEmptyTeams(),
+            matches: ["match-1", "match-2", "final-1", "revanch-1"].map((suffix, index) => ({
+                id: `${moduleId}-${suffix}`, teamIds: [null, null], winnerId: null, derived: index > 1
+            })),
+            loserMatches: ["loser-1", "loser-2"].map(suffix => ({
+                id: `${moduleId}-${suffix}`, teamIds: [null, null], winnerId: null, derived: true
+            }))
+        };
+        saveTournamentState(next, "bracket");
+        return;
+    }
     next.modules[moduleId] = {
         created: true,
         matches: Array.from({ length: Math.ceil(roster.length / 2) }, (_, index) => ({
@@ -47,7 +61,33 @@ function syncBracketProgression(state) {
     };
     for (const definition of TOURNAMENT_MODULES.filter(item => item.enabled)) {
         const module = state?.modules?.[definition.id];
-        if (!module?.created || module.loserMatches.length < 5) continue;
+        if (!module?.created) continue;
+        if (definition.teamMode) {
+            const semiOne = module.matches.find(match => match.id === `${definition.id}-match-1`);
+            const semiTwo = module.matches.find(match => match.id === `${definition.id}-match-2`);
+            const final = module.matches.find(match => match.id === `${definition.id}-final-1`);
+            const revenge = module.matches.find(match => match.id === `${definition.id}-revanch-1`);
+            const hellSemi = module.loserMatches.find(match => match.id === `${definition.id}-loser-1`);
+            const hellFinal = module.loserMatches.find(match => match.id === `${definition.id}-loser-2`);
+            const loserOf = match => match?.winnerId && match.teamIds?.every(Boolean)
+                ? match.teamIds.find(id => id !== match.winnerId) : null;
+            const updateTeams = (match, teamIds) => {
+                if (!match) return;
+                const ids = [teamIds[0] || null, teamIds[1] || null];
+                const winnerId = ids.includes(match.winnerId) && ids.every(Boolean) ? match.winnerId : null;
+                if (match.teamIds?.[0] !== ids[0] || match.teamIds?.[1] !== ids[1] || match.winnerId !== winnerId) changed = true;
+                match.teamIds = ids;
+                match.winnerId = winnerId;
+            };
+            updateTeams(semiOne, [module.teams?.[0]?.id, module.teams?.[1]?.id]);
+            updateTeams(semiTwo, [module.teams?.[2]?.id, module.teams?.[3]?.id]);
+            updateTeams(final, [semiOne?.winnerId, semiTwo?.winnerId]);
+            updateTeams(hellSemi, [loserOf(semiOne), loserOf(semiTwo)]);
+            updateTeams(hellFinal, [hellSemi?.winnerId, loserOf(final)]);
+            updateTeams(revenge, [final?.winnerId, hellFinal?.winnerId]);
+            continue;
+        }
+        if (module.loserMatches.length < 5) continue;
         const quarter = module.matches.filter(match => match.id.includes("-match-")).slice(0, 4);
         const semiOne = module.matches.find(match => match.id === `${definition.id}-semi-1`);
         const semiTwo = module.matches.find(match => match.id === `${definition.id}-semi-2`);
@@ -71,6 +111,37 @@ function syncBracketProgression(state) {
         update(revenge, [final.winnerId, module.loserMatches[4].winnerId]);
     }
     return changed;
+}
+
+function setTeamMember(moduleId, teamId, slot, playerId) {
+    const next = getTournamentState();
+    const module = next.modules[moduleId];
+    const team = module?.teams?.find(item => item.id === teamId);
+    if (!team || ![0, 1].includes(slot)) return false;
+    const occupied = module.teams.flatMap(item => item.playerIds).filter(Boolean);
+    if (playerId && (!getPlayerById(playerId) || occupied.includes(playerId) && team.playerIds[slot] !== playerId)) return false;
+    team.playerIds[slot] = playerId || null;
+    const ready = module.teams.every(item => item.playerIds.every(Boolean));
+    module.created = ready;
+    if (!ready) {
+        [...module.matches, ...module.loserMatches].forEach(match => { match.teamIds = [null, null]; match.winnerId = null; });
+    }
+    syncBracketProgression(next);
+    saveTournamentState(next, "bracket");
+    return true;
+}
+
+function setTeamMatchWinner(moduleId, matchId, winnerId) {
+    const next = getTournamentState();
+    const module = next.modules[moduleId];
+    const match = [...(module?.matches || []), ...(module?.loserMatches || [])].find(item => item.id === matchId);
+    const teamIds = match?.teamIds || [];
+    if (!match || !teamIds.every(Boolean)) return false;
+    if (winnerId !== null && (!module.teams.some(team => team.id === winnerId) || !teamIds.includes(winnerId))) return false;
+    match.winnerId = winnerId || null;
+    syncBracketProgression(next);
+    saveTournamentState(next, "result");
+    return true;
 }
 
 function setMatchParticipant(moduleId, matchId, slot, playerId) {
@@ -195,7 +266,8 @@ function syncBracketChampionTheme(state) {
         .sort((left, right) => left.id === activeModuleId ? -1 : right.id === activeModuleId ? 1 : 0);
     const championId = modules.map(definition => {
         const module = state?.modules?.[definition.id];
-        return module?.matches?.find(match => match.id.endsWith("-revanch-1"))?.winnerId || null;
+        const winnerId = module?.matches?.find(match => match.id.endsWith("-revanch-1"))?.winnerId || null;
+        return definition.teamMode ? module?.teams?.find(team => team.id === winnerId)?.playerIds?.find(Boolean) || null : winnerId;
     }).find(Boolean);
     const champion = getPlayerById(championId);
     const theme = getPlayerBanner(champion)?.theme || champion?.theme;
@@ -216,6 +288,67 @@ function placementCardMarkup(rank, playerId, description, champion = false) {
             <span class="placement-info"><strong>${escapeHTML(label)}</strong><small>${escapeHTML(description)}</small></span>
         </button>
     </div>`;
+}
+
+function teamById(module, teamId) {
+    return module?.teams?.find(team => team.id === teamId) || null;
+}
+
+function teamLabel(module, teamId) {
+    const team = teamById(module, teamId);
+    if (!team) return "A CONFIRMAR";
+    return team.playerIds.map(id => getPlayerById(id)?.name).filter(Boolean).join(" / ") || "EQUIPO POR DEFINIR";
+}
+
+function teamBannerMarkup(module, teamId) {
+    const team = teamById(module, teamId);
+    const members = team?.playerIds.map(id => getPlayerById(id)).filter(Boolean) || [];
+    return members.length ? `<div class="team-banner-art">${members.map(player => {
+        const banner = getPlayerBanner(player);
+        return banner ? `<img src="${banner.image}" alt="" loading="lazy">` : `<span>${escapeHTML(player.name.trim().slice(0, 2).toUpperCase())}</span>`;
+    }).join("")}</div>` : `<div class="team-banner-art is-empty"><span>2V2</span></div>`;
+}
+
+function teamSetupMarkup(module) {
+    const occupied = module.teams.flatMap(team => team.playerIds).filter(Boolean);
+    return `<section class="team-setup" aria-labelledby="teamSetupTitle">
+        <div class="team-setup-heading"><div><span class="eyebrow">FORMACIÓN DE EQUIPOS</span><h4 id="teamSetupTitle">Arma los cuatro equipos 2 VS 2</h4><p class="muted">Cada jugador solo puede pertenecer a un equipo. Completa las parejas para abrir el bracket.</p></div>
+        <span class="status-pill">${occupied.length}/8 JUGADORES</span></div>
+        <div class="team-setup-grid">${module.teams.map((team, index) => `<article class="team-setup-card"><span class="eyebrow">EQUIPO ${String(index + 1).padStart(2, "0")}</span><strong>${escapeHTML(teamLabel(module, team.id))}</strong>
+            ${[0, 1].map(slot => `<label><span>JUGADOR ${slot + 1}</span><select data-team-member="${team.id}" data-team-slot="${slot}"><option value="">Elegir jugador</option>${getPlayers().map(player => `<option value="${escapeHTML(player.id)}" ${player.id === team.playerIds[slot] ? "selected" : ""} ${occupied.includes(player.id) && player.id !== team.playerIds[slot] ? "disabled" : ""}>${escapeHTML(player.name)}</option>`).join("")}</select></label>`).join("")}
+        </article>`).join("")}</div>
+    </section>`;
+}
+
+function teamMatchMarkup(module, match, label) {
+    const ready = match?.teamIds?.every(Boolean);
+    return `<article class="team-match ${match?.winnerId ? "is-resolved" : ""}"><span class="team-match-label">${label}</span><div class="team-match-sides">${[0, 1].map(slot => {
+        const teamId = match?.teamIds?.[slot];
+        const winner = Boolean(teamId && match.winnerId === teamId);
+        const team = teamById(module, teamId);
+        const members = team?.playerIds.map(id => getPlayerById(id)?.name).filter(Boolean) || [];
+        return `<button type="button" class="team-match-side ${winner ? "is-winner" : ""}" data-team-match="${match?.id || ""}" data-team-winner="${escapeHTML(teamId || "")}" aria-pressed="${winner}" ${!ready ? "disabled" : ""}>
+            <span class="team-side-names">${members.length ? members.map(name => `<span>${escapeHTML(name)}</span>`).join("") : '<span>A CONFIRMAR</span><span>A CONFIRMAR</span>'}</span><small>${winner ? "✓ AVANZA" : match?.winnerId ? "DERROTA" : ready ? "ELEGIR GANADOR" : "ESPERANDO EQUIPO"}</small></button>${slot === 0 ? '<span class="team-match-vs">VS</span>' : ""}`;
+    }).join("")}</div>${match?.winnerId ? `<button type="button" class="text-button team-match-undo" data-clear="${match.id}">Deshacer</button>` : ""}</article>`;
+}
+
+function teamBracketMarkup(module) {
+    const mainOne = module.matches.find(match => match.id === "module-3-match-1");
+    const mainTwo = module.matches.find(match => match.id === "module-3-match-2");
+    const final = module.matches.find(match => match.id === "module-3-final-1");
+    const revenge = module.matches.find(match => match.id === "module-3-revanch-1");
+    const hellOne = module.loserMatches.find(match => match.id === "module-3-loser-1");
+    const hellFinal = module.loserMatches.find(match => match.id === "module-3-loser-2");
+    const champion = teamLabel(module, revenge?.winnerId);
+    const runnerUp = revenge?.winnerId ? teamLabel(module, revenge.teamIds.find(id => id !== revenge.winnerId)) : "A CONFIRMAR";
+    return `${teamSetupMarkup(module)}<section class="team-bracket" aria-label="Bracket 2 VS 2">
+        <p class="composition-help">Cada cruce representa una pareja. El ganador del cuadro principal se enfrenta al ganador del Infierno en la final de revancha.</p>
+        <div class="team-bracket-board"><div class="team-bracket-column"><span class="flow-round"><small>01 / TOP 4</small>SEMIFINALES</span>${teamMatchMarkup(module, mainOne, "SEMIFINAL 01")}${teamMatchMarkup(module, mainTwo, "SEMIFINAL 02")}</div>
+            <div class="team-bracket-column team-bracket-middle"><span class="flow-round"><small>02 / TOP 2</small>FINAL DEL BRACKET PRINCIPAL</span>${teamMatchMarkup(module, final, "FINAL PRINCIPAL")}${teamMatchMarkup(module, hellFinal, "FINAL DEL INFIERNO")}</div>
+            <div class="team-bracket-column"><span class="flow-round flow-round-champion"><small>03 / ÚLTIMA OPORTUNIDAD</small>FINAL (REVANCHA)</span>${teamMatchMarkup(module, revenge, "FINAL DE REVANCHA")}<div class="team-placement-card"><span>1º</span><strong>${escapeHTML(champion)}</strong><small>CAMPEÓN</small></div><div class="team-placement-card"><span>2º</span><strong>${escapeHTML(runnerUp)}</strong><small>FINALISTA</small></div></div>
+            <div class="team-bracket-column team-bracket-hell"><span class="flow-round"><small>BRACKET DEL INFIERNO</small>PRIMERA RONDA</span>${teamMatchMarkup(module, hellOne, "PERDEDORES DE SEMIFINALES")}</div>
+        </div>
+    </section>`;
 }
 
 function bracketTreeMarkup(module) {
@@ -322,7 +455,7 @@ function renderBracket() {
     if (!state) return;
     syncBracketChampionTheme(state);
     const allMatches = getTournamentMatches(state);
-    const playableMatches = allMatches.filter(match => match.playerIds?.every(Boolean));
+    const playableMatches = allMatches.filter(match => (match.playerIds || match.teamIds)?.every(Boolean));
     document.getElementById("tournamentProgress").textContent = `${getPlayers().length}/8 participantes · ${playableMatches.filter(match => match.winnerId).length}/${playableMatches.length} partidas resueltas`;
     const tabs = document.getElementById("bracketModuleTabs");
     tabs.innerHTML = TOURNAMENT_MODULES.map(module => {
@@ -337,10 +470,15 @@ function renderBracket() {
     const module = state.modules[definition.id];
     const content = document.getElementById("bracketModuleContent");
     content.setAttribute("aria-labelledby", `tab-${definition.id}`);
-    if (!definition.enabled) {
-        content.innerHTML = `<div class="extra-placeholder"><span class="eyebrow">EL SIGUIENTE CAPÍTULO</span>
-            <span class="extra-symbol" aria-hidden="true">+</span><h3>MÓDULO EXTRA</h3><p>PRÓXIMAMENTE</p>
-            <span class="muted">Una nueva fase. Las reglas se anunciarán más adelante.</span></div>`;
+    if (definition.teamMode) {
+        const teamsReady = module.teams?.every(team => team.playerIds.every(Boolean));
+        const progress = getModuleProgress(module);
+        content.innerHTML = `<div class="module-heading"><div><span class="eyebrow">${definition.label}</span>
+            <h3>${definition.title}</h3><p class="muted">Cuatro equipos de dos jugadores. El resultado se registra por pareja.</p></div>
+            <span class="status-pill ${progress.complete ? "is-complete" : ""}">${progress.complete ? "COMPLETADO" : teamsReady ? "EN JUEGO" : "POR PREPARAR"}</span></div>
+            <div class="module-progress"><div style="width:${progress.total ? progress.completed / progress.total * 100 : 0}%"></div></div>
+            ${teamBracketMarkup(module)}
+            ${module.created && teamsReady ? `<div class="module-winners"><span class="eyebrow">GANADORES DEL MÓDULO 3</span><div class="winner-list"><span class="winner-chip">${escapeHTML(teamLabel(module, module.matches.find(match => match.id.endsWith("-revanch-1"))?.winnerId))}</span></div></div>` : ""}`;
         return;
     }
     const roster = getPlayers();
@@ -390,14 +528,24 @@ document.getElementById("bracketModuleContent").addEventListener("click", event 
         return;
     }
     const moduleId = getTournamentState().currentModule;
-    if (button.dataset.prepare) createModuleMatches(moduleId);
-    else if (button.dataset.clear) setMatchWinner(moduleId, button.dataset.clear, null);
+    if (button.dataset.teamWinner) setTeamMatchWinner(moduleId, button.dataset.teamMatch, button.dataset.teamWinner);
+    else if (button.dataset.prepare) createModuleMatches(moduleId);
+    else if (button.dataset.clear) {
+        const definition = TOURNAMENT_MODULES.find(item => item.id === moduleId);
+        if (definition?.teamMode) setTeamMatchWinner(moduleId, button.dataset.clear, null);
+        else setMatchWinner(moduleId, button.dataset.clear, null);
+    }
     else if (button.dataset.winner) {
         setMatchWinner(moduleId, button.dataset.match, button.dataset.winner);
         document.getElementById("bracketMessage").textContent = "Resultado actualizado. Puedes corregirlo eligiendo al otro jugador o deshacerlo.";
     }
 });
 document.getElementById("bracketModuleContent").addEventListener("change", event => {
+    const teamSelect = event.target.closest("select[data-team-member]");
+    if (teamSelect) {
+        setTeamMember(getTournamentState().currentModule, teamSelect.dataset.teamMember, Number(teamSelect.dataset.teamSlot), teamSelect.value || null);
+        return;
+    }
     const select = event.target.closest("select[data-match]");
     if (!select) return;
     const state = getTournamentState();

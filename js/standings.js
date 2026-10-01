@@ -82,7 +82,10 @@ function registerModulePlacements(module, byId) {
 
 function calculateStandings(roster = getPlayers(), source = getTournamentState()) {
     const state = Array.isArray(source) ? getTournamentState() : source;
-    const matches = Array.isArray(source) ? source : getTournamentMatches(state);
+    const scoredModules = TOURNAMENT_MODULES.filter(item => item.enabled && item.id !== "module-3");
+    const matches = Array.isArray(source) ? source : scoredModules.flatMap(module => [
+        ...(state?.modules?.[module.id]?.matches || []), ...(state?.modules?.[module.id]?.loserMatches || [])
+    ]);
     const rows = roster.map((player, index) => ({
         player, order: index, played: 0, won: 0, lost: 0, points: 0,
         placement: STANDING_PLACEMENT.pending
@@ -91,7 +94,7 @@ function calculateStandings(roster = getPlayers(), source = getTournamentState()
     const counted = new Set();
     for (const match of matches) registerMatchStats(match, byId, counted, rows);
     if (state?.modules) {
-        for (const definition of TOURNAMENT_MODULES.filter(item => item.enabled)) {
+        for (const definition of scoredModules) {
             registerModulePlacements(state.modules[definition.id], byId);
         }
     }
