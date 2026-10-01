@@ -83,6 +83,8 @@ function resetRandomizer() {
 
 function renderPlayerPanel(state) {
     if (!randomizerPlayerPanel) return;
+    randomizerPlayerPanel.hidden = false;
+    randomizerPlayerPanel.parentElement?.classList.remove("is-duel");
     const players = getPlayers();
     if (!players.length) {
         randomizerPlayerPanel.innerHTML = `<div class="randomizer-player-empty">Agrega participantes para abrir sus apartados.</div>`;
@@ -103,12 +105,18 @@ function renderPlayerPanel(state) {
         </details>
         <div class="randomizer-slot-rules"><span class="eyebrow">CATEGORÍA POR POSICIÓN</span><div>${slotRulesMarkup}</div></div>
         <div class="randomizer-player-switcher"><span class="eyebrow">CAMBIAR RÁPIDO</span><div>${players.map(option => `<button type="button" data-randomizer-player="${escapeHTML(option.id)}" class="${option.id === player.id ? "is-active" : ""}" ${randomizerRunning ? "disabled" : ""}>${escapeHTML(option.name)}</button>`).join("")}</div></div>`;
+    randomizerPlayerPanel.dataset.activePlayer = player.id;
+    randomizerPlayerPanel.querySelector("[data-randomizer-active-player]")?.addEventListener("change", event => setActiveRandomizerPlayer(event.target.value));
+    randomizerPlayerPanel.querySelectorAll("[data-randomizer-player]").forEach(button => {
+        button.addEventListener("click", () => setActiveRandomizerPlayer(button.dataset.randomizerPlayer));
+    });
 }
 
 function renderDuelPanel(state) {
     if (!randomizerPlayerPanel) return;
-    randomizerPlayerPanel.innerHTML = `<div class="randomizer-player-panel-head"><span class="eyebrow">MODO 1VS1 RANDOM</span><h3>Dos jugadores, un duelo</h3><p>Selecciona los participantes en las dos tarjetas y sortea un campeón para cada lado.</p></div>
-        <div class="randomizer-duel-summary">${[0, 1].map(index => `<div><span>JUGADOR ${index + 1}</span><strong>${escapeHTML(getPlayerById(state.playerIds[index])?.name || "Por elegir")}</strong></div>`).join("")}</div>`;
+    randomizerPlayerPanel.hidden = true;
+    randomizerPlayerPanel.innerHTML = "";
+    randomizerPlayerPanel.parentElement?.classList.add("is-duel");
 }
 
 function singleResultMarkup(state, player) {
@@ -129,7 +137,7 @@ function renderRandomizer() {
         button.disabled = randomizerRunning;
     });
     if (state.mode === "single") {
-        const player = activeRandomizerPlayer(state);
+        const player = getPlayerById(randomizerPlayerPanel?.dataset.activePlayer) || activeRandomizerPlayer(state);
         const picks = player ? playerChampionList(state, player.id) : [];
         renderPlayerPanel(state);
         randomizerResults.classList.remove("is-duel");
@@ -168,7 +176,7 @@ function runRandomizer() {
     let activeId = null;
     let singleDraw = null;
     if (state.randomizer.mode === "single") {
-        const player = activeRandomizerPlayer(state);
+        const player = getPlayerById(randomizerPlayerPanel?.dataset.activePlayer) || activeRandomizerPlayer(state);
         activeId = player?.id || null;
         const picks = activeId ? playerChampionList(state.randomizer, activeId) : [];
         if (!activeId || picks.length >= RANDOMIZER_PLAYER_LIMIT) return;
@@ -224,16 +232,6 @@ randomizerResults.addEventListener("change", event => {
     next.randomizer.champions = [];
     saveTournamentState(next, "randomizer");
     renderRandomizer();
-});
-randomizerPlayerPanel?.addEventListener("change", event => {
-    const select = event.target.closest("[data-randomizer-active-player]");
-    if (!select) return;
-    setActiveRandomizerPlayer(select.value);
-});
-randomizerPlayerPanel?.addEventListener("click", event => {
-    const button = event.target.closest("[data-randomizer-player]");
-    if (!button) return;
-    setActiveRandomizerPlayer(button.dataset.randomizerPlayer);
 });
 randomizeButton.addEventListener("click", runRandomizer);
 resetRandomizerButton.addEventListener("click", resetRandomizer);

@@ -3895,6 +3895,7 @@ body[class*="bracket-theme-"] button:focus-visible { outline-color: var(--bracke
 
 /* Randomizer por jugador: panel desplegable a la izquierda y sorteo a la derecha. */
 .randomizer-workspace { display: grid; grid-template-columns: minmax(230px, .78fr) minmax(360px, 1.22fr); gap: 22px; align-items: start; }
+.randomizer-workspace.is-duel { grid-template-columns: minmax(0, 1fr); }
 .randomizer-player-panel { min-width: 0; padding: 18px; border: 1px solid #315979; border-radius: 10px; background: radial-gradient(circle at 50% 0, #16487988, #07172b 68%); box-shadow: inset 0 0 35px #168cff12, 0 12px 30px #0004; }
 .randomizer-player-panel-head h3 { margin: 6px 0; color: #fff; font-size: 22px; letter-spacing: 1px; overflow-wrap: anywhere; }
 .randomizer-player-panel-head p { color: #a8bfd6; font-size: 12px; line-height: 1.6; }
