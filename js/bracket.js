@@ -300,6 +300,12 @@ function teamLabel(module, teamId) {
     return team.playerIds.map(id => getPlayerById(id)?.name).filter(Boolean).join(" / ") || "EQUIPO POR DEFINIR";
 }
 
+function teamMemberBanner(playerId) {
+    const player = getPlayerById(playerId);
+    const banner = getPlayerBanner(player);
+    return `<span class="team-member-banner ${player ? "" : "is-pending"}">${banner ? `<img src="${banner.image}" alt="" loading="lazy">` : ""}<b>${escapeHTML(player?.name || "POR DEFINIR")}</b></span>`;
+}
+
 function teamSetupMarkup(module) {
     const occupied = module.teams.flatMap(team => team.playerIds).filter(Boolean);
     return `<section class="team-setup" aria-labelledby="teamSetupTitle">
@@ -317,9 +323,9 @@ function teamMatchMarkup(module, match, label, placement = "") {
         const teamId = match?.teamIds?.[slot];
         const winner = Boolean(teamId && match.winnerId === teamId);
         const team = teamById(module, teamId);
-        const members = team?.playerIds.map(id => getPlayerById(id)?.name).filter(Boolean) || [];
+        const memberIds = team?.playerIds || [null, null];
         return `<button type="button" class="team-match-side ${winner ? "is-winner" : ""}" data-team-match="${match?.id || ""}" data-team-winner="${escapeHTML(teamId || "")}" aria-pressed="${winner}" ${!ready ? "disabled" : ""}>
-            <span class="team-side-names">${members.length ? members.map(name => `<span>${escapeHTML(name)}</span>`).join("") : '<span>POR DEFINIR</span><span>POR DEFINIR</span>'}</span><small>${winner ? "✓ AVANZA" : match?.winnerId ? "DERROTA" : ready ? "MARCAR GANADOR" : "ESPERANDO EQUIPO"}</small></button>${slot === 0 ? '<span class="team-match-vs">VS</span>' : ""}`;
+            <span class="team-side-names">${memberIds.map(teamMemberBanner).join("")}</span><small>${winner ? "✓ AVANZA" : match?.winnerId ? "DERROTA" : ready ? "MARCAR GANADOR" : "ESPERANDO EQUIPO"}</small></button>${slot === 0 ? '<span class="team-match-vs">VS</span>' : ""}`;
     }).join("")}</div>${match?.winnerId ? `<button type="button" class="text-button team-match-undo" data-clear="${match.id}">Deshacer</button>` : ""}</article>`;
 }
 

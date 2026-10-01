@@ -4097,6 +4097,15 @@ body[class*="bracket-theme-"] .randomizer-engine .champion-media > span { border
 .team-side-names { width: 100%; gap: 4px; }
 .team-side-names span { width: 100%; padding: 5px 3px; border: 1px solid #ffffff16; border-radius: 4px; background: #020b1890; font-size: 10px; text-align: center; }
 .team-match-side small { font-size: 7px; text-align: center; }
+.team-match-side { min-height: 112px; padding: 8px; }
+.team-side-names { display: grid; gap: 4px; }
+.team-member-banner { position: relative; display: flex; min-width: 0; height: 30px; align-items: center; overflow: hidden; border: 1px solid #8ab6d344; border-radius: 4px; background: linear-gradient(110deg, #0c2137, #081526); isolation: isolate; }
+.team-member-banner img { position: absolute; z-index: -2; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 30%; opacity: .78; }
+.team-member-banner::after { content: ""; position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg, #03101bdc, #0615266b 55%, #03101bbd); }
+.team-member-banner b { width: 100%; padding: 0 6px; overflow: hidden; color: #f6faff; font-size: 9px; font-weight: 800; text-align: center; text-overflow: ellipsis; text-shadow: 0 1px 4px #000; white-space: nowrap; }
+.team-member-banner.is-pending { border-style: dashed; border-color: #7894ad55; }
+.team-match-side.is-winner .team-member-banner { border-color: #eed17888; }
+.team-match-side.is-winner .team-member-banner::after { background: linear-gradient(90deg, #191609cf, #16140b78 55%, #191609cf); }
 .team-match-vs { padding: 4px 3px; border-radius: 50%; background: #153856; color: #b6dbf8; font-size: 8px; }
 .team-flow-lines { z-index: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .team-flow-lines path { fill: none; stroke: #67aff0; stroke-width: 1.6; vector-effect: non-scaling-stroke; filter: drop-shadow(0 0 4px #399af066); }
