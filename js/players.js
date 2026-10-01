@@ -5,6 +5,9 @@
 const MAX_PLAYERS = 8;
 
 const PLAYERS_STORAGE_KEY = "torneoLOL_players";
+const SAVED_PLAYERS_STORAGE_KEY = "torneoLOL_saved_players_v1";
+const CUSTOM_PLAYERS_STORAGE_KEY = "torneoLOL_custom_players_v1";
+const SAVED_PLAYERS_MODE_KEY = "torneoLOL_saved_players_active_v1";
 
 
 /* =========================================
@@ -69,6 +72,56 @@ players = players.map(player => {
 
 });
 
+// La primera carga conserva en una lista fija todos los perfiles ya guardados.
+// La lista editable se mantiene aparte para poder alternar sin perder datos.
+function readPlayerCollection(key) {
+    try {
+        const value = JSON.parse(localStorage.getItem(key) || "null");
+        return Array.isArray(value) ? value.filter(player => player && typeof player.name === "string") : null;
+    } catch (error) {
+        console.warn(`No se pudo leer ${key}:`, error);
+        return null;
+    }
+}
+
+function copyPlayerCollection(collection) {
+    return collection.map(player => ({
+        ...player,
+        id: player.id || createPlayerId(),
+        name: player.name || "",
+        summonerName: player.summonerName || "",
+        lastRank: player.lastRank || "Sin registrar",
+        rankSeason: player.rankSeason || "",
+        mainChampion: player.mainChampion || "Sin registrar",
+        champions: Array.isArray(player.champions) ? [...player.champions] : ["", "", ""],
+        primaryRole: player.primaryRole || "Sin registrar",
+        secondaryRole: player.secondaryRole || "Sin registrar",
+        server: player.server || "Sin registrar",
+        description: player.description || "",
+        banner: player.banner || "",
+        theme: player.theme || "blue"
+    }));
+}
+
+let savedRoster = readPlayerCollection(SAVED_PLAYERS_STORAGE_KEY);
+let customRoster = readPlayerCollection(CUSTOM_PLAYERS_STORAGE_KEY);
+
+if (!savedRoster) {
+    const initialRoster = players.length ? players : ["Cafe", "Masa", "Meilin", "Richard", "Myles", "Chato", "Kevo", "Raquel"].map(name => ({ name }));
+    savedRoster = copyPlayerCollection(initialRoster);
+    writeStoredJSON(SAVED_PLAYERS_STORAGE_KEY, savedRoster);
+}
+
+if (!customRoster) {
+    // El modo editable empieza limpio para que se puedan registrar otros jugadores.
+    customRoster = [];
+    writeStoredJSON(CUSTOM_PLAYERS_STORAGE_KEY, customRoster);
+}
+
+let savedRosterActive = localStorage.getItem(SAVED_PLAYERS_MODE_KEY) !== "false";
+players = copyPlayerCollection(savedRosterActive ? savedRoster : customRoster);
+localStorage.setItem(SAVED_PLAYERS_MODE_KEY, String(savedRosterActive));
+
 
 savePlayers();
 
@@ -91,6 +144,9 @@ const playerCount =
 
 const playerMessage =
     document.getElementById("playerMessage");
+
+const savedRosterToggle = document.getElementById("savedRosterToggle");
+const addPlayerArea = document.querySelector(".add-player-area");
 
 
 /* =========================================
@@ -278,6 +334,8 @@ function renderBannerSelector() {
 
 bannerGrid.addEventListener("click", (event) => {
 
+    if (savedRosterActive) return;
+
     const bannerOption =
         event.target.closest(".banner-option");
 
@@ -388,6 +446,8 @@ function updateSelectedPlayerBanner() {
 ========================================= */
 
 changeBannerButton.addEventListener("click", () => {
+
+    if (savedRosterActive) return;
 
     renderBannerSelector();
 
@@ -546,8 +606,49 @@ function loadPlayers() {
 
 function savePlayers() {
     const persisted = writeStoredJSON(PLAYERS_STORAGE_KEY, players);
+    if (!savedRosterActive) {
+        customRoster = copyPlayerCollection(players);
+        writeStoredJSON(CUSTOM_PLAYERS_STORAGE_KEY, customRoster);
+    }
     document.dispatchEvent(new CustomEvent("players:changed"));
     return persisted;
+}
+
+function syncSavedRosterControls() {
+    if (savedRosterToggle) {
+        savedRosterToggle.textContent = savedRosterActive ? "JUGADORES GUARDADOS ✓" : "MIS JUGADORES";
+        savedRosterToggle.setAttribute("aria-pressed", String(savedRosterActive));
+        savedRosterToggle.classList.toggle("is-active", savedRosterActive);
+        savedRosterToggle.title = savedRosterActive
+            ? "Lista fija activa. Pulsa para usar tus jugadores editables."
+            : "Modo editable activo. Pulsa para volver a la lista guardada.";
+    }
+    if (addPlayerArea) addPlayerArea.hidden = savedRosterActive;
+
+    const editProfileButton = document.getElementById("editProfileButton");
+    const deletePlayerButton = document.getElementById("deletePlayerButton");
+    if (editProfileButton) editProfileButton.hidden = savedRosterActive;
+    if (deletePlayerButton) deletePlayerButton.hidden = savedRosterActive;
+    if (changeBannerButton) changeBannerButton.hidden = savedRosterActive;
+}
+
+function toggleSavedRoster() {
+    if (savedRosterActive) {
+        customRoster = readPlayerCollection(CUSTOM_PLAYERS_STORAGE_KEY) || [];
+        savedRosterActive = false;
+        players = copyPlayerCollection(customRoster);
+    } else {
+        customRoster = copyPlayerCollection(players);
+        writeStoredJSON(CUSTOM_PLAYERS_STORAGE_KEY, customRoster);
+        savedRosterActive = true;
+        players = copyPlayerCollection(savedRoster);
+    }
+
+    localStorage.setItem(SAVED_PLAYERS_MODE_KEY, String(savedRosterActive));
+    savePlayers();
+    syncSavedRosterControls();
+    renderPlayers();
+    if (playerModal?.classList.contains("active")) closeModal();
 }
 
 function createPlayerId() {
@@ -605,6 +706,8 @@ function hidePlayerMessage() {
 function renderPlayers() {
 
     if (!playerCount || !playersList) return;
+
+    syncSavedRosterControls();
 
 
     playerCount.textContent =
@@ -667,14 +770,14 @@ function renderPlayers() {
 
             </div>
 
-            <button
+            ${savedRosterActive ? "" : `<button
                 class="edit-player-button"
                 title="Editar jugador"
                 data-index="${index}"
                 type="button"
             >
                 ✎
-            </button>
+            </button>`}
 
         `;
 
@@ -705,7 +808,7 @@ function renderPlayers() {
             );
 
 
-        editButton.addEventListener(
+        editButton?.addEventListener(
             "click",
             (event) => {
 
@@ -737,6 +840,8 @@ function startEditingPlayer(
     index,
     playerCard
 ) {
+
+    if (savedRosterActive) return;
 
     const player = players[index];
 
@@ -953,6 +1058,8 @@ function startEditingPlayer(
 ========================================= */
 
 function addPlayer() {
+
+    if (savedRosterActive) return;
 
     const name =
         playerNameInput.value.trim();
@@ -1464,6 +1571,10 @@ if (addPlayerButton) {
 
 }
 
+if (savedRosterToggle) {
+    savedRosterToggle.addEventListener("click", toggleSavedRoster);
+}
+
 
 /* =========================================
    ENTER PARA AGREGAR
@@ -1524,6 +1635,7 @@ profileForm.innerHTML = `<div class="profile-edit-grid">${PROFILE_FIELDS.map(([k
     <button type="button" class="secondary-button" id="cancelProfileEdit">CANCELAR</button></div>`;
 
 document.getElementById("editProfileButton").addEventListener("click", () => {
+    if (savedRosterActive) return;
     const player = players[selectedPlayerIndex];
     if (!player) return;
     profileForm.hidden = !profileForm.hidden;
@@ -1541,6 +1653,7 @@ document.getElementById("cancelProfileEdit").addEventListener("click", () => {
 });
 profileForm.addEventListener("submit", event => {
     event.preventDefault();
+    if (savedRosterActive) return;
     const player = players[selectedPlayerIndex];
     if (!player) return;
     PROFILE_FIELDS.forEach(([key, , max]) => {
@@ -1553,6 +1666,7 @@ profileForm.addEventListener("submit", event => {
     if (persisted) announce("Perfil guardado.");
 });
 document.getElementById("deletePlayerButton").addEventListener("click", () => {
+    if (savedRosterActive) return;
     const player = players[selectedPlayerIndex];
     if (!player || !confirm(`¿Eliminar a ${player.name}? Sus enfrentamientos quedarán pendientes y sus resultados dejarán de contar.`)) return;
     players.splice(selectedPlayerIndex, 1);

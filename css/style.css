@@ -2932,6 +2932,35 @@ body.modal-open {
     margin: 20px auto 30px;
 }
 
+.saved-roster-toggle {
+    flex: 0 0 auto;
+    padding: 10px 13px;
+    border: 1px solid #35516b;
+    border-radius: 5px;
+    background: #0a1929;
+    color: #bdd0e3;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .8px;
+    cursor: pointer;
+    transition: .2s ease;
+}
+
+.saved-roster-toggle:hover,
+.saved-roster-toggle.is-active {
+    border-color: #168cff;
+    background: #087cff24;
+    color: #fff;
+    box-shadow: 0 0 16px #087cff24;
+}
+
+.saved-roster-toggle[aria-pressed="false"] {
+    border-color: #b86b45;
+    color: #ffd0a3;
+}
+
+.add-player-area[hidden] { display: none !important; }
+
 .roulette-wheel {
     position: relative;
     width: 100%;
