@@ -300,15 +300,6 @@ function teamLabel(module, teamId) {
     return team.playerIds.map(id => getPlayerById(id)?.name).filter(Boolean).join(" / ") || "EQUIPO POR DEFINIR";
 }
 
-function teamBannerMarkup(module, teamId) {
-    const team = teamById(module, teamId);
-    const members = team?.playerIds.map(id => getPlayerById(id)).filter(Boolean) || [];
-    return members.length ? `<div class="team-banner-art">${members.map(player => {
-        const banner = getPlayerBanner(player);
-        return banner ? `<img src="${banner.image}" alt="" loading="lazy">` : `<span>${escapeHTML(player.name.trim().slice(0, 2).toUpperCase())}</span>`;
-    }).join("")}</div>` : `<div class="team-banner-art is-empty"><span>2V2</span></div>`;
-}
-
 function teamSetupMarkup(module) {
     const occupied = module.teams.flatMap(team => team.playerIds).filter(Boolean);
     return `<section class="team-setup" aria-labelledby="teamSetupTitle">
@@ -320,15 +311,15 @@ function teamSetupMarkup(module) {
     </section>`;
 }
 
-function teamMatchMarkup(module, match, label) {
+function teamMatchMarkup(module, match, label, placement = "") {
     const ready = match?.teamIds?.every(Boolean);
-    return `<article class="team-match ${match?.winnerId ? "is-resolved" : ""}"><span class="team-match-label">${label}</span><div class="team-match-sides">${[0, 1].map(slot => {
+    return `<article class="team-match ${match?.winnerId ? "is-resolved" : ""}" ${placement ? `style="${placement}"` : ""}><span class="team-match-label">${label}</span><div class="team-match-sides">${[0, 1].map(slot => {
         const teamId = match?.teamIds?.[slot];
         const winner = Boolean(teamId && match.winnerId === teamId);
         const team = teamById(module, teamId);
         const members = team?.playerIds.map(id => getPlayerById(id)?.name).filter(Boolean) || [];
         return `<button type="button" class="team-match-side ${winner ? "is-winner" : ""}" data-team-match="${match?.id || ""}" data-team-winner="${escapeHTML(teamId || "")}" aria-pressed="${winner}" ${!ready ? "disabled" : ""}>
-            <span class="team-side-names">${members.length ? members.map(name => `<span>${escapeHTML(name)}</span>`).join("") : '<span>A CONFIRMAR</span><span>A CONFIRMAR</span>'}</span><small>${winner ? "✓ AVANZA" : match?.winnerId ? "DERROTA" : ready ? "ELEGIR GANADOR" : "ESPERANDO EQUIPO"}</small></button>${slot === 0 ? '<span class="team-match-vs">VS</span>' : ""}`;
+            <span class="team-side-names">${members.length ? members.map(name => `<span>${escapeHTML(name)}</span>`).join("") : '<span>POR DEFINIR</span><span>POR DEFINIR</span>'}</span><small>${winner ? "✓ AVANZA" : match?.winnerId ? "DERROTA" : ready ? "MARCAR GANADOR" : "ESPERANDO EQUIPO"}</small></button>${slot === 0 ? '<span class="team-match-vs">VS</span>' : ""}`;
     }).join("")}</div>${match?.winnerId ? `<button type="button" class="text-button team-match-undo" data-clear="${match.id}">Deshacer</button>` : ""}</article>`;
 }
 
@@ -339,14 +330,32 @@ function teamBracketMarkup(module) {
     const revenge = module.matches.find(match => match.id === "module-3-revanch-1");
     const hellOne = module.loserMatches.find(match => match.id === "module-3-loser-1");
     const hellFinal = module.loserMatches.find(match => match.id === "module-3-loser-2");
-    const champion = teamLabel(module, revenge?.winnerId);
+    const champion = revenge?.winnerId ? teamLabel(module, revenge.winnerId) : "A CONFIRMAR";
     const runnerUp = revenge?.winnerId ? teamLabel(module, revenge.teamIds.find(id => id !== revenge.winnerId)) : "A CONFIRMAR";
+    const third = final?.winnerId ? teamLabel(module, final.teamIds.find(id => id !== final.winnerId)) : "A CONFIRMAR";
+    const fourth = hellFinal?.winnerId ? teamLabel(module, hellFinal.teamIds.find(id => id !== hellFinal.winnerId)) : "A CONFIRMAR";
     return `${teamSetupMarkup(module)}<section class="team-bracket" aria-label="Bracket 2 VS 2">
-        <p class="composition-help">Cada cruce representa una pareja. El ganador del cuadro principal se enfrenta al ganador del Infierno en la final de revancha.</p>
-        <div class="team-bracket-board"><div class="team-bracket-column"><span class="flow-round"><small>01 / TOP 4</small>SEMIFINALES</span>${teamMatchMarkup(module, mainOne, "SEMIFINAL 01")}${teamMatchMarkup(module, mainTwo, "SEMIFINAL 02")}</div>
-            <div class="team-bracket-column team-bracket-middle"><span class="flow-round"><small>02 / TOP 2</small>FINAL DEL BRACKET PRINCIPAL</span>${teamMatchMarkup(module, final, "FINAL PRINCIPAL")}${teamMatchMarkup(module, hellFinal, "FINAL DEL INFIERNO")}</div>
-            <div class="team-bracket-column"><span class="flow-round flow-round-champion"><small>03 / ÚLTIMA OPORTUNIDAD</small>FINAL (REVANCHA)</span>${teamMatchMarkup(module, revenge, "FINAL DE REVANCHA")}<div class="team-placement-card"><span>1º</span><strong>${escapeHTML(champion)}</strong><small>CAMPEÓN</small></div><div class="team-placement-card"><span>2º</span><strong>${escapeHTML(runnerUp)}</strong><small>FINALISTA</small></div></div>
-            <div class="team-bracket-column team-bracket-hell"><span class="flow-round"><small>BRACKET DEL INFIERNO</small>PRIMERA RONDA</span>${teamMatchMarkup(module, hellOne, "PERDEDORES DE SEMIFINALES")}</div>
+        <p class="composition-help">Selecciona la pareja ganadora de cada cruce. Los equipos aparecen en recuadros compactos y avanzan por el bracket hasta la revancha.</p>
+        <div class="team-bracket-scroll" role="region" aria-label="Bracket 2 VS 2 desplazable" tabindex="0">
+            <div class="team-flow-board">
+                <span class="team-flow-heading" style="grid-column:1"><small>01 / TOP 4</small>SEMIFINALES</span>
+                <span class="team-flow-heading" style="grid-column:3"><small>02 / TOP 2</small>FINAL DEL BRACKET PRINCIPAL</span>
+                <span class="team-flow-heading" style="grid-column:5"><small>03 / CAMPEÓN</small>FINAL (REVANCHA)</span>
+                ${teamMatchMarkup(module, mainOne, "SEMIFINAL 01", "grid-column:1;grid-row:2")}
+                ${teamMatchMarkup(module, mainTwo, "SEMIFINAL 02", "grid-column:1;grid-row:4")}
+                <svg class="team-flow-lines team-main-lines" style="grid-column:2;grid-row:2 / span 3" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 17 H48 V50 H100 M0 83 H48 V50"/></svg>
+                ${teamMatchMarkup(module, final, "FINAL PRINCIPAL", "grid-column:3;grid-row:3")}
+                <svg class="team-flow-lines team-revenge-lines" style="grid-column:4;grid-row:3 / span 4" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 12 H100 M0 92 H48 V12"/></svg>
+                ${teamMatchMarkup(module, revenge, "FINAL DE REVANCHA", "grid-column:5;grid-row:3")}
+                <div class="team-placement-strip" style="grid-column:5;grid-row:4">${[
+                    ["1º", champion, "CAMPEÓN"], ["2º", runnerUp, "FINALISTA"],
+                    ["3º", third, "PERDEDOR DE LA FINAL PRINCIPAL"], ["4º", fourth, "PERDEDOR DEL INFIERNO"]
+                ].map(([rank, name, label]) => `<div class="team-placement-card"><span>${rank}</span><strong>${escapeHTML(name)}</strong><small>${label}</small></div>`).join("")}</div>
+                <div class="team-hell-heading" style="grid-column:1 / span 2;grid-row:6"><span class="eyebrow">SEGUNDA OPORTUNIDAD</span><strong>BRACKET DEL INFIERNO</strong><small>Los perdedores de semifinales se enfrentan; el ganador sigue a la final del Infierno.</small></div>
+                ${teamMatchMarkup(module, hellOne, "PERDEDORES DE SEMIFINALES", "grid-column:1;grid-row:7")}
+                <svg class="team-flow-lines team-hell-lines" style="grid-column:2;grid-row:7" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M0 50 H100"/></svg>
+                ${teamMatchMarkup(module, hellFinal, "FINAL DEL INFIERNO", "grid-column:3;grid-row:7")}
+            </div>
         </div>
     </section>`;
 }
