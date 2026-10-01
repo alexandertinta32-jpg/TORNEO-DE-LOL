@@ -4076,6 +4076,9 @@ body[class*="bracket-theme-"] .randomizer-engine .champion-media > span { border
 .trophy-stats-table th:first-child { width: 34%; }
 .trophy-stats-table th:not(:first-child) { width: 22%; }
 .trophy-stats-table input { display: block; width: min(100%, 84px); margin: 0 auto; }
+.trophy-stats-table input[type="number"] { appearance: textfield; -moz-appearance: textfield; color-scheme: dark; }
+.trophy-stats-table input[type="number"]::-webkit-inner-spin-button,
+.trophy-stats-table input[type="number"]::-webkit-outer-spin-button { margin: 0; -webkit-appearance: none; }
 .trophy-player-cell { min-width: 0; }
 .trophy-player-cell > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
