@@ -17,13 +17,13 @@ Abre `index.html` con Live Server. La vista local de desarrollo usada durante es
 - `js/standings.js` deriva PJ, PG, PP y puntos de los resultados vigentes; no acumula contadores, por lo que corregir un ganador no duplica estadísticas.
 - `js/roulette.js` dibuja nombres desde los jugadores y guarda solamente el historial del sorteo. Al completar ocho selecciones muestra los ocho banners en orden, reproduce `assets/sounds/EEG.mp3` y permite cerrar la pantalla con CONTINUAR. No modifica el bracket automáticamente.
 - `data/champions.js` contiene el catálogo local de 173 campeones de Data Dragon 16.19.1 (`es_MX`), sin descargar imágenes.
-- `js/randomizer.js` admite sorteo individual y modo 1VS1 sin repetir campeón. En 1VS1 selecciona una categoría compartida (luchador, mago, asesino, tirador, soporte o tanque) y reserva el contenedor para imágenes futuras.
+- `js/randomizer.js` admite sorteo individual por jugador y modo 1VS1. En individual, cada giro se guarda en el apartado del participante activo hasta un máximo de tres campeones, sin repetir dentro de su lista; en 1VS1 selecciona una categoría compartida (luchador, mago, asesino, tirador, soporte o tanque).
 
 ## Reglas provisionales
 
 La configuración actual está centralizada en `TOURNAMENT_CONFIG`: victoria = 3 puntos y derrota = 0 puntos. La clasificación ordena por puntos, victorias y conserva el orden de registro como desempate estable hasta definir una regla adicional.
 
-Los módulos no aplican eliminación ni pases automáticos: cada cruce se prepara y se edita manualmente. Un cruce con un solo participante no suma estadísticas. Reiniciar el torneo pide confirmación y borra resultados, cruces, progreso e historial de ruleta, conservando jugadores, perfiles y banners.
+Los módulos no aplican eliminación ni pases automáticos: cada cruce se prepara y se edita manualmente. Un cruce con un solo participante no suma estadísticas. Reiniciar los brackets pide confirmación y borra resultados, cruces y progreso, conservando jugadores, perfiles, banners, ruleta y randomizer.
 
 ## Compatibilidad
 

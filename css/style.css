@@ -3843,7 +3843,8 @@ select, .profile-edit-form input, .profile-edit-form textarea { width: 100%; min
 
 /* El campeón de la revancha tiñe la pantalla con el tema de su banner. */
 body[class*="bracket-theme-"] {
-    background-image: linear-gradient(135deg, color-mix(in srgb, var(--bracket-theme-primary) 24%, #020912 76%), color-mix(in srgb, var(--bracket-theme-accent) 8%, #01050b 92%)), url("../assets/backgrounds/torneo-bg.jpg");
+    background-image: linear-gradient(135deg, color-mix(in srgb, var(--bracket-theme-primary) 20%, transparent), rgba(1, 7, 15, .46)), url("../assets/backgrounds/torneo-bg.jpg");
+    background-color: #030b16;
 }
 body[class*="bracket-theme-"] .header { border-bottom-color: var(--bracket-theme-primary); box-shadow: 0 0 24px color-mix(in srgb, var(--bracket-theme-primary) 28%, transparent); }
 body[class*="bracket-theme-"] .logo strong, body[class*="bracket-theme-"] .section-header h2 { color: var(--bracket-theme-accent); }
@@ -3858,3 +3859,72 @@ body.bracket-theme-myles { --bracket-theme-primary: #54dce8; --bracket-theme-acc
 body.bracket-theme-meilin { --bracket-theme-primary: #ec6fae; --bracket-theme-accent: #ff9fca; }
 body.bracket-theme-evan { --bracket-theme-primary: #c62828; --bracket-theme-accent: #ff7777; }
 body.bracket-theme-richard { --bracket-theme-primary: #20d5df; --bracket-theme-accent: #6ff7ff; }
+
+/* Aplicación completa del tema del campeón: elimina los acentos azules que
+   quedaban fijos en la navegación, módulos y trazos del bracket. */
+body[class*="bracket-theme-"] .section-header { border-left-color: var(--bracket-theme-primary); }
+body[class*="bracket-theme-"] .section-header p,
+body[class*="bracket-theme-"] .section-header h2 { color: var(--bracket-theme-accent); }
+body[class*="bracket-theme-"] #bracketModuleContent { background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--bracket-theme-primary) 38%, transparent), transparent 66%); }
+body[class*="bracket-theme-"] .module-tab { border-color: color-mix(in srgb, var(--bracket-theme-primary) 28%, #314a63 72%); background: color-mix(in srgb, var(--bracket-theme-primary) 8%, #0a1628 92%); }
+body[class*="bracket-theme-"] .module-tab.is-active { border-color: var(--bracket-theme-primary); background: linear-gradient(120deg, color-mix(in srgb, var(--bracket-theme-primary) 28%, #123b60 72%), #12263d); box-shadow: inset 0 -2px var(--bracket-theme-accent); }
+body[class*="bracket-theme-"] .module-progress { background: color-mix(in srgb, var(--bracket-theme-primary) 12%, #ffffff0c 88%); }
+body[class*="bracket-theme-"] .module-progress > div { background: linear-gradient(90deg, var(--bracket-theme-primary), var(--bracket-theme-accent)); }
+body[class*="bracket-theme-"] .bracket-composition { --flow-blue: var(--bracket-theme-accent); border-color: color-mix(in srgb, var(--bracket-theme-primary) 62%, #27415d 38%); background: radial-gradient(ellipse at 75% 50%, color-mix(in srgb, var(--bracket-theme-primary) 26%, transparent), transparent 62%), color-mix(in srgb, var(--bracket-theme-primary) 13%, #040e21 87%); }
+body[class*="bracket-theme-"] .bracket-composition .flow-round small,
+body[class*="bracket-theme-"] .bracket-composition .composition-scroll-hint { color: color-mix(in srgb, var(--bracket-theme-accent) 75%, #8eaec9 25%); }
+body[class*="bracket-theme-"] .bracket-composition .flow-connector path { stroke: color-mix(in srgb, var(--bracket-theme-primary) 70%, #526f8d 30%); }
+body[class*="bracket-theme-"] .bracket-composition .flow-connector.is-resolved path { stroke: var(--bracket-theme-accent); filter: drop-shadow(0 0 4px color-mix(in srgb, var(--bracket-theme-accent) 72%, transparent)); }
+body[class*="bracket-theme-"] .bracket-composition .tree-match { border-color: color-mix(in srgb, var(--bracket-theme-primary) 70%, #304e66 30%); box-shadow: 0 0 0 3px color-mix(in srgb, var(--bracket-theme-primary) 18%, transparent), 0 6px 22px #0006; }
+body[class*="bracket-theme-"] .bracket-composition .tree-player { border-color: color-mix(in srgb, var(--bracket-theme-primary) 55%, #304e66 45%); }
+body[class*="bracket-theme-"] .bracket-composition .tree-player:not(:disabled):hover { border-color: var(--bracket-theme-accent); box-shadow: 0 0 16px color-mix(in srgb, var(--bracket-theme-accent) 48%, transparent); }
+body[class*="bracket-theme-"] .bracket-composition .tree-player.is-winner { border-color: var(--bracket-theme-accent); box-shadow: inset 0 0 14px color-mix(in srgb, var(--bracket-theme-primary) 28%, transparent); }
+body[class*="bracket-theme-"] .bracket-composition .tree-vs { border-color: var(--bracket-theme-primary); background: color-mix(in srgb, var(--bracket-theme-primary) 50%, #061a3b 50%); box-shadow: 0 0 12px color-mix(in srgb, var(--bracket-theme-primary) 60%, transparent); }
+body[class*="bracket-theme-"] .bracket-composition .tree-match-footer .text-button,
+body[class*="bracket-theme-"] .bracket-composition .tree-player-select { color: var(--bracket-theme-accent); }
+body[class*="bracket-theme-"] .bracket-composition .tree-player-select { border-color: color-mix(in srgb, var(--bracket-theme-primary) 68%, #37658b 32%); background: color-mix(in srgb, var(--bracket-theme-primary) 18%, #0a1d34 82%); }
+body[class*="bracket-theme-"] .placement-strip { border-top-color: color-mix(in srgb, var(--bracket-theme-primary) 68%, #3b6383 32%); }
+body[class*="bracket-theme-"] .placement-card { border-color: color-mix(in srgb, var(--bracket-theme-primary) 50%, #345d82 50%); background: color-mix(in srgb, var(--bracket-theme-primary) 12%, #071a34 88%); }
+body[class*="bracket-theme-"] .placement-player { border-color: color-mix(in srgb, var(--bracket-theme-primary) 68%, #4b9be9 32%); background: color-mix(in srgb, var(--bracket-theme-primary) 16%, #081c3b 84%); }
+body[class*="bracket-theme-"] .primary-button { border-color: var(--bracket-theme-primary); background: linear-gradient(135deg, color-mix(in srgb, var(--bracket-theme-primary) 90%, #000 10%), color-mix(in srgb, var(--bracket-theme-accent) 45%, #07152b 55%)); box-shadow: 0 0 22px color-mix(in srgb, var(--bracket-theme-primary) 30%, transparent); }
+body[class*="bracket-theme-"] .text-button { color: var(--bracket-theme-accent); }
+body[class*="bracket-theme-"] button:focus-visible { outline-color: var(--bracket-theme-accent); }
+
+/* Randomizer por jugador: panel desplegable a la izquierda y sorteo a la derecha. */
+.randomizer-workspace { display: grid; grid-template-columns: minmax(230px, .78fr) minmax(360px, 1.22fr); gap: 22px; align-items: start; }
+.randomizer-player-panel { min-width: 0; padding: 18px; border: 1px solid #315979; border-radius: 10px; background: radial-gradient(circle at 50% 0, #16487988, #07172b 68%); box-shadow: inset 0 0 35px #168cff12, 0 12px 30px #0004; }
+.randomizer-player-panel-head h3 { margin: 6px 0; color: #fff; font-size: 22px; letter-spacing: 1px; overflow-wrap: anywhere; }
+.randomizer-player-panel-head p { color: #a8bfd6; font-size: 12px; line-height: 1.6; }
+.randomizer-player-label { display: block; margin: 18px 0 6px; color: #8fb3d5; font-size: 9px; font-weight: 800; letter-spacing: 1.5px; }
+.randomizer-player-panel select { margin: 0; border-color: #3e78a6; background: #081a30; color: #e1f1ff; }
+.randomizer-player-details { margin-top: 14px; border: 1px solid #315979; border-radius: 7px; background: #061426aa; overflow: hidden; }
+.randomizer-player-details summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px; color: #fff; cursor: pointer; list-style: none; }
+.randomizer-player-details summary::-webkit-details-marker { display: none; }
+.randomizer-player-details summary strong, .randomizer-player-details summary small { display: block; }
+.randomizer-player-details summary small { margin-top: 4px; color: #79bdf2; font-size: 8px; letter-spacing: 1px; }
+.randomizer-player-details summary b { color: #79bdf2; font-size: 18px; transition: transform .2s; }
+.randomizer-player-details[open] summary b { transform: rotate(180deg); }
+.randomizer-picked-list { display: grid; gap: 7px; padding: 0 10px 10px; }
+.randomizer-picked-card { display: flex; align-items: center; gap: 10px; padding: 9px; border: 1px solid #315979; border-radius: 5px; background: linear-gradient(120deg, #0c2945, #07182d); }
+.randomizer-picked-card > span { color: #72b7ee; font-size: 10px; font-weight: 900; }
+.randomizer-picked-card strong, .randomizer-picked-card small { display: block; }
+.randomizer-picked-card strong { color: #f3f8ff; font-size: 13px; }
+.randomizer-picked-card small { margin-top: 3px; color: #8aafd0; font-size: 8px; letter-spacing: 1px; }
+.randomizer-picked-empty, .randomizer-player-empty { padding: 12px; color: #8fa9c3; font-size: 11px; line-height: 1.6; }
+.randomizer-player-switcher { margin-top: 18px; }
+.randomizer-player-switcher > div { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+.randomizer-player-switcher button { padding: 7px 8px; border: 1px solid #315979; border-radius: 4px; background: #081a30; color: #9fc5e3; font-size: 9px; font-weight: 800; }
+.randomizer-player-switcher button:hover, .randomizer-player-switcher button.is-active { border-color: #64b8f7; background: #123b60; color: #fff; }
+.randomizer-engine { min-width: 0; }
+.randomizer-engine #randomizerResults { min-height: 300px; }
+.random-champion-card-single { min-height: 300px; display: grid; align-content: center; justify-items: center; }
+.randomizer-duel-summary { display: grid; gap: 9px; margin-top: 22px; }
+.randomizer-duel-summary div { padding: 10px; border: 1px solid #315979; border-radius: 5px; background: #081a30; }
+.randomizer-duel-summary span, .randomizer-duel-summary strong { display: block; }
+.randomizer-duel-summary span { color: #79bdf2; font-size: 8px; letter-spacing: 1px; }
+.randomizer-duel-summary strong { margin-top: 4px; color: #fff; font-size: 14px; }
+@media (max-width: 850px) {
+    .randomizer-workspace { grid-template-columns: minmax(0, 1fr); }
+    .randomizer-player-panel { order: 1; }
+    .randomizer-engine { order: 2; }
+}
